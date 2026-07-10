@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import MaiaGuide from '../components/MaiaGuide'
+import { fetchEntries, syncEntry } from '../lib/villaSync'
 
 const ASSESS_CARDS = [
   {
@@ -68,6 +70,16 @@ const MOODS = [
   { value: 1, emoji: '😢', label: 'Struggling', color: '#ef4444' },
 ]
 
+const JOURNAL_PROMPTS = [
+  'What emotion did you feel most strongly today, and what triggered it?',
+  'What helped you feel even 1% safer, calmer, or more grounded today?',
+  'What is one thought you can reframe with more self-compassion right now?',
+  'Where did you show resilience today, even in a small way?',
+  'What boundary did you honor today, or where do you want to set one tomorrow?',
+  'What did your body need today that you may have ignored?',
+  'What are you grateful for in this season, even if things feel hard?',
+]
+
 function todayStr() {
   return new Date().toDateString()
 }
@@ -76,29 +88,204 @@ function readLS(key, fallback) {
   try { return JSON.parse(localStorage.getItem(key) || 'null') ?? fallback } catch { return fallback }
 }
 
+function dayKeyFromTs(ts) {
+  const d = new Date(ts)
+  d.setHours(0, 0, 0, 0)
+  return d.getTime()
+}
+
+function getBestStreak(list) {
+  const days = [...new Set(list.map(item => dayKeyFromTs(item.ts)))].sort((a, b) => a - b)
+  if (!days.length) return 0
+
+  let best = 1
+  let run = 1
+
+  for (let i = 1; i < days.length; i += 1) {
+    if (days[i] - days[i - 1] === 86400000) {
+      run += 1
+      best = Math.max(best, run)
+    } else {
+      run = 1
+    }
+  }
+
+  return best
+}
+
+function getCurrentStreak(list) {
+  const daySet = new Set(list.map(item => dayKeyFromTs(item.ts)))
+  let count = 0
+
+  for (let i = 0; i < 365; i += 1) {
+    const d = new Date()
+    d.setDate(d.getDate() - i)
+    d.setHours(0, 0, 0, 0)
+    if (!daySet.has(d.getTime())) break
+    count += 1
+  }
+
+  return count
+}
+
+function sortByNewest(items) {
+  return [...items].sort((a, b) => (b.ts || 0) - (a.ts || 0))
+}
+
+function getScoreValue(value) {
+  if (typeof value === 'number') return value
+  if (value && typeof value.score === 'number') return value.score
+  return null
+}
+
+function normalizeAssessmentPayload(payload) {
+  if (!payload || typeof payload !== 'object') return null
+
+  if (payload.scores && payload.date) {
+    return payload
+  }
+
+  const hasLegacyShape = ['pss', 'phq', 'gad', 'cdrisc'].some(key => payload[key] != null)
+  if (!hasLegacyShape) return null
+
+  return {
+    id: Date.now(),
+    date: new Date().toISOString(),
+    adviceKey: 'selfcare',
+    scores: payload,
+  }
+}
+
 export default function MoodDiaryCentre() {
   const navigate = useNavigate()
+  const { isAuthenticated } = useAuth()
 
   // Assessment scores saved by EmotionScales page
-  const savedScores = readLS('ri_scores', {})
+  const [savedScores, setSavedScores] = useState(() => readLS('ri_scores', {}))
+  const [scoreHistory, setScoreHistory] = useState(() => readLS('ri_score_history', []))
 
   // Mood entries
   const [entries, setEntries] = useState(() => readLS('ri_moods', []))
+  const [journalEntries, setJournalEntries] = useState(() => readLS('ri_reflective_journal', []))
+  const [promptIndex, setPromptIndex] = useState(() => Math.floor(Math.random() * JOURNAL_PROMPTS.length))
 
   const todayEntry = entries.find(e => new Date(e.ts).toDateString() === todayStr())
+  const todayJournalEntry = journalEntries.find(e => new Date(e.ts).toDateString() === todayStr())
   const [selectedMood, setSelectedMood] = useState(
     todayEntry ? MOODS.find(m => m.value === todayEntry.value) ?? null : null
   )
   const [note, setNote] = useState(todayEntry?.note ?? '')
   const [saved, setSaved] = useState(!!todayEntry)
+  const [journalText, setJournalText] = useState(todayJournalEntry?.text ?? '')
+  const [journalSaved, setJournalSaved] = useState(!!todayJournalEntry)
+
+  useEffect(() => {
+    if (!isAuthenticated) return undefined
+
+    let active = true
+
+    async function hydrateDiary() {
+      const [moodRows, journalRows, assessmentRows] = await Promise.all([
+        fetchEntries({ category: 'mood', source: 'mood-diary', limit: 90 }),
+        fetchEntries({ category: 'journal', source: 'mood-diary', limit: 90 }),
+        fetchEntries({ category: 'assessment', source: 'emotion-scales', limit: 12 }),
+      ])
+
+      if (!active) return
+
+      const remoteMoodEntries = sortByNewest(
+        moodRows.map(row => row.payload).filter(entry => entry?.ts)
+      )
+      const remoteJournalEntries = sortByNewest(
+        journalRows.map(row => row.payload).filter(entry => entry?.ts)
+      )
+      const remoteScoreHistory = [...assessmentRows]
+        .map(row => normalizeAssessmentPayload(row.payload))
+        .filter(Boolean)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+      if (remoteMoodEntries.length > 0) {
+        setEntries(remoteMoodEntries)
+        localStorage.setItem('ri_moods', JSON.stringify(remoteMoodEntries))
+
+        const remoteTodayEntry = remoteMoodEntries.find(entry => new Date(entry.ts).toDateString() === todayStr())
+        setSelectedMood(remoteTodayEntry ? MOODS.find(m => m.value === remoteTodayEntry.value) ?? null : null)
+        setNote(remoteTodayEntry?.note ?? '')
+        setSaved(Boolean(remoteTodayEntry))
+      }
+
+      if (remoteJournalEntries.length > 0) {
+        setJournalEntries(remoteJournalEntries)
+        localStorage.setItem('ri_reflective_journal', JSON.stringify(remoteJournalEntries))
+
+        const remoteTodayJournal = remoteJournalEntries.find(entry => new Date(entry.ts).toDateString() === todayStr())
+        setJournalText(remoteTodayJournal?.text ?? '')
+        setJournalSaved(Boolean(remoteTodayJournal))
+      }
+
+      if (remoteScoreHistory.length > 0) {
+        const latestScores = remoteScoreHistory[0]?.scores || {}
+        setScoreHistory(remoteScoreHistory)
+        setSavedScores(latestScores)
+        localStorage.setItem('ri_score_history', JSON.stringify(remoteScoreHistory))
+        localStorage.setItem('ri_scores', JSON.stringify(latestScores))
+      }
+    }
+
+    hydrateDiary()
+
+    return () => {
+      active = false
+    }
+  }, [isAuthenticated])
 
   function saveMood() {
     if (!selectedMood) return
-    const entry = { ts: Date.now(), value: selectedMood.value, emoji: selectedMood.emoji, label: selectedMood.label, note }
+    const ts = Date.now()
+    const entry = { ts, value: selectedMood.value, emoji: selectedMood.emoji, label: selectedMood.label, note }
     const updated = [...entries.filter(e => new Date(e.ts).toDateString() !== todayStr()), entry]
     setEntries(updated)
     localStorage.setItem('ri_moods', JSON.stringify(updated))
     setSaved(true)
+    syncEntry({
+      category: 'mood',
+      source: 'mood-diary',
+      entryKey: todayStr(),
+      entryDate: todayStr(),
+      payload: entry,
+    })
+  }
+
+  function rotatePrompt() {
+    setPromptIndex(p => (p + 1) % JOURNAL_PROMPTS.length)
+  }
+
+  function saveJournal() {
+    const trimmed = journalText.trim()
+    if (trimmed.length < 10) return
+
+    const ts = Date.now()
+    const entry = {
+      ts,
+      prompt: JOURNAL_PROMPTS[promptIndex],
+      text: trimmed,
+      wordCount: trimmed.split(/\s+/).filter(Boolean).length,
+    }
+
+    const updated = [...journalEntries.filter(e => new Date(e.ts).toDateString() !== todayStr()), entry]
+      .sort((a, b) => b.ts - a.ts)
+
+    setJournalEntries(updated)
+    localStorage.setItem('ri_reflective_journal', JSON.stringify(updated))
+    setJournalSaved(true)
+
+    syncEntry({
+      category: 'journal',
+      source: 'mood-diary',
+      entryKey: `journal-${todayStr()}`,
+      entryDate: todayStr(),
+      payload: entry,
+    })
   }
 
   // Last 7 days for insights
@@ -124,6 +311,92 @@ export default function MoodDiaryCentre() {
     ? filledDays[filledDays.length - 1].entry.value - filledDays[0].entry.value
     : null
 
+  const last30 = Array.from({ length: 30 }, (_, i) => {
+    const d = new Date()
+    d.setDate(d.getDate() - (29 - i))
+    const ds = d.toDateString()
+    const entry = entries.find(e => new Date(e.ts).toDateString() === ds)
+    return { ds, day: d.getDate(), month: d.getMonth(), entry }
+  })
+
+  const streak = (() => {
+    let count = 0
+    for (let i = 0; i < 30; i += 1) {
+      const d = new Date()
+      d.setDate(d.getDate() - i)
+      const found = entries.find(e => new Date(e.ts).toDateString() === d.toDateString())
+      if (!found) break
+      count += 1
+    }
+    return count
+  })()
+
+  const monthAverage = last30.filter(d => d.entry).length
+    ? (last30.filter(d => d.entry).reduce((sum, d) => sum + d.entry.value, 0) / last30.filter(d => d.entry).length).toFixed(1)
+    : null
+
+  const journalHistory = [...journalEntries].sort((a, b) => b.ts - a.ts).slice(0, 4)
+  const moodEntryDays = new Set(entries.map(e => new Date(e.ts).toDateString())).size
+  const journalEntryDays = new Set(journalEntries.map(e => new Date(e.ts).toDateString())).size
+  const journalWordCount = journalEntries.reduce((sum, entry) => sum + (entry.wordCount || 0), 0)
+  const bestMoodStreak = getBestStreak(entries)
+  const journalStreak = getCurrentStreak(journalEntries)
+  const completedAssessments = ASSESS_CARDS.filter(card => getScoreValue(savedScores[card.id]) != null).length
+
+  const milestones = [
+    {
+      id: 'mood-first',
+      icon: '🎯',
+      title: 'First mood check-in',
+      detail: 'Log your first emotion entry.',
+      current: moodEntryDays,
+      target: 1,
+    },
+    {
+      id: 'mood-streak',
+      icon: '🔥',
+      title: '7-day mood streak',
+      detail: 'Build a consistent check-in habit.',
+      current: bestMoodStreak,
+      target: 7,
+    },
+    {
+      id: 'journal-start',
+      icon: '✍️',
+      title: '3 reflections written',
+      detail: 'Write three reflective journal entries.',
+      current: journalEntryDays,
+      target: 3,
+    },
+    {
+      id: 'journal-depth',
+      icon: '📚',
+      title: '300 reflection words',
+      detail: 'Grow depth in your journalling practice.',
+      current: journalWordCount,
+      target: 300,
+    },
+    {
+      id: 'assessment',
+      icon: '🧭',
+      title: 'Assessment explorer',
+      detail: 'Complete all four emotion assessments.',
+      current: completedAssessments,
+      target: 4,
+    },
+    {
+      id: 'journal-streak',
+      icon: '🌱',
+      title: '5-day journal streak',
+      detail: 'Write reflections five days in a row.',
+      current: journalStreak,
+      target: 5,
+    },
+  ]
+
+  const unlockedCount = milestones.filter(m => m.current >= m.target).length
+  const milestoneProgress = Math.round((unlockedCount / milestones.length) * 100)
+
   return (
     <div className="villa-page" style={{ '--villa-color': '#8b5cf6', '--villa-color-light': '#c4b5fd' }}>
       <div className="villa-bg">
@@ -148,7 +421,8 @@ export default function MoodDiaryCentre() {
         <div className="mdc-assess-grid">
           {ASSESS_CARDS.map(card => {
             const s = savedScores[card.id]
-            const sev = s != null ? card.getSeverity(s.score) : null
+            const score = getScoreValue(s)
+            const sev = score != null ? card.getSeverity(score) : null
             return (
               <div key={card.id} className="mdc-assess-card" style={{ '--ac': card.color }}>
                 <div className="mdc-assess-top">
@@ -163,7 +437,7 @@ export default function MoodDiaryCentre() {
                   {sev ? (
                     <>
                       <span className="mdc-assess-score-val" style={{ color: card.color }}>
-                        {s.score}<span className="mdc-assess-max">/{card.maxScore}</span>
+                        {score}<span className="mdc-assess-max">/{card.maxScore}</span>
                       </span>
                       <span className="mdc-sev-pill" style={{ background: sev.color + '22', color: sev.color }}>
                         {sev.label}
@@ -173,6 +447,11 @@ export default function MoodDiaryCentre() {
                     <span className="mdc-not-taken">Not taken yet</span>
                   )}
                 </div>
+                {s?.date && (
+                  <p style={{ marginTop: 10, fontSize: '0.74rem', color: 'rgba(255,240,200,0.45)' }}>
+                    Saved {new Date(s.date).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </p>
+                )}
                 <button className="mdc-assess-btn" onClick={() => navigate('/emotion-scales')}>
                   {sev ? 'Retake →' : 'Take Assessment →'}
                 </button>
@@ -180,6 +459,45 @@ export default function MoodDiaryCentre() {
             )
           })}
         </div>
+
+        {scoreHistory.length > 0 && (
+          <>
+            <p className="mdc-label">Assessment History</p>
+            <div className="mdc-card">
+              <div className="mdc-card-header">
+                <span className="mdc-card-icon">🗂️</span>
+                <div>
+                  <h3 className="mdc-card-title">Previous questionnaire snapshots</h3>
+                  <p className="mdc-card-sub">Your latest saved assessment runs stay visible here when you come back.</p>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gap: 10 }}>
+                {scoreHistory.slice(0, 6).map(entry => (
+                  <div key={entry.id} style={{ display: 'grid', gap: 10, padding: '14px 16px', borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', color: 'rgba(255,240,200,0.7)', fontSize: '0.82rem' }}>
+                      <span>{new Date(entry.date).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                      <span>{entry.adviceKey === 'emergency' ? 'High-support recommendation' : entry.adviceKey === 'professional' ? 'Professional-support recommendation' : 'Self-care recommendation'}</span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 8 }}>
+                      {ASSESS_CARDS.map(card => {
+                        const historyScore = entry.scores?.[card.id]
+                        const historySeverity = historyScore ? card.getSeverity(historyScore.score) : null
+                        return (
+                          <div key={card.id} style={{ padding: '10px 12px', borderRadius: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                            <div style={{ fontSize: '0.72rem', color: 'rgba(255,240,200,0.45)', marginBottom: 4 }}>{card.shortName}</div>
+                            <div style={{ color: historySeverity?.color || 'white', fontWeight: 700 }}>{historyScore?.score ?? '--'} / {card.maxScore}</div>
+                            {historySeverity && <div style={{ fontSize: '0.74rem', color: historySeverity.color, marginTop: 4 }}>{historySeverity.label}</div>}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
 
         {/* ── Track Your Emotions ── */}
         <p className="mdc-label">Track Your Emotions</p>
@@ -293,18 +611,154 @@ export default function MoodDiaryCentre() {
           )}
         </div>
 
-        {/* ── Wellbeing Practices (static) ── */}
-        <p className="mdc-label">Wellbeing Practices</p>
-        <div className="mdc-static-grid">
-          <div className="villa-card" style={{ animation: 'none' }}>
-            <div className="card-icon">✍️</div>
-            <h3 className="card-title">Reflective Journalling</h3>
-            <p className="card-text">Go beyond mood tracking with guided journalling prompts designed by psychologists to help you process and understand your inner world.</p>
+        {/* ── Monthly Mood Snapshot ── */}
+        <p className="mdc-label">Monthly Mood Snapshot</p>
+        <div className="mdc-card">
+          <div className="mdc-card-header">
+            <span className="mdc-card-icon">📈</span>
+            <div>
+              <h3 className="mdc-card-title">Last 30 days at a glance</h3>
+              <p className="mdc-card-sub">
+                {monthAverage
+                  ? <>Average mood: <strong style={{ color: '#c4b5fd' }}>{monthAverage}/5</strong> · {streak} day{streak === 1 ? '' : 's'} tracked in a row</>
+                  : 'Use daily check-ins to build a fuller picture over time'}
+              </p>
+            </div>
           </div>
-          <div className="villa-card" style={{ animation: 'none' }}>
-            <div className="card-icon">🌱</div>
-            <h3 className="card-title">Growth Milestones</h3>
-            <p className="card-text">Celebrate your progress. Every entry is a step forward. Look back and see just how far your emotional journey has taken you.</p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10, minmax(0, 1fr))', gap: 6 }}>
+            {last30.map((day, i) => {
+              const mood = day.entry ? MOODS.find(m => m.value === day.entry.value) : null
+              const barHeight = mood ? `${20 + mood.value * 14}%` : '12%'
+              return (
+                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }} title={mood ? `${day.entry.label} on ${day.ds}` : `No entry on ${day.ds}`}>
+                  <div style={{ width: '100%', height: 86, display: 'flex', alignItems: 'end', justifyContent: 'center', background: 'rgba(255,255,255,0.03)', borderRadius: 10, border: '1px solid rgba(255,255,255,0.06)', padding: 6 }}>
+                    <div style={{ width: '100%', height: barHeight, minHeight: 10, borderRadius: 8, background: mood ? mood.color : 'rgba(255,255,255,0.14)', opacity: mood ? 0.95 : 0.5, transition: 'height 0.2s' }} />
+                  </div>
+                  <span style={{ fontSize: '0.68rem', color: 'rgba(255,240,200,0.45)' }}>{day.day}</span>
+                </div>
+              )
+            })}
+          </div>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 14 }}>
+            <div style={{ flex: '1 1 180px', padding: '12px 14px', borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <p style={{ fontSize: '0.74rem', color: 'rgba(255,240,200,0.45)', marginBottom: 4 }}>Current streak</p>
+              <p style={{ color: 'white', fontSize: '1.05rem' }}>{streak} day{streak === 1 ? '' : 's'}</p>
+            </div>
+            <div style={{ flex: '1 1 180px', padding: '12px 14px', borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <p style={{ fontSize: '0.74rem', color: 'rgba(255,240,200,0.45)', marginBottom: 4 }}>Entries logged</p>
+              <p style={{ color: 'white', fontSize: '1.05rem' }}>{last30.filter(d => d.entry).length} / 30 days</p>
+            </div>
+            <div style={{ flex: '1 1 180px', padding: '12px 14px', borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <p style={{ fontSize: '0.74rem', color: 'rgba(255,240,200,0.45)', marginBottom: 4 }}>Momentum</p>
+              <p style={{ color: trend > 0 ? '#10b981' : trend < 0 ? '#ef4444' : '#f59e0b', fontSize: '1.05rem' }}>
+                {trend > 0 ? 'Improving' : trend < 0 ? 'Needs support' : 'Stable'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Reflective Journalling ── */}
+        <p className="mdc-label">Reflective Journalling</p>
+        <div className="mdc-card">
+          <div className="mdc-card-header">
+            <span className="mdc-card-icon">✍️</span>
+            <div>
+              <h3 className="mdc-card-title">Guided Reflection Studio</h3>
+              <p className="mdc-card-sub">
+                {journalEntries.length
+                  ? `${journalEntries.length} reflection${journalEntries.length === 1 ? '' : 's'} saved so far`
+                  : 'Start your first reflection with a guided prompt'}
+              </p>
+            </div>
+          </div>
+
+          {journalSaved && todayJournalEntry ? (
+            <div className="mdc-journal-saved">
+              <p className="mdc-journal-saved-label">Today&apos;s reflection</p>
+              <p className="mdc-journal-saved-prompt">Prompt: {todayJournalEntry.prompt}</p>
+              <p className="mdc-journal-saved-text">{todayJournalEntry.text}</p>
+              <button className="mdc-update-btn" onClick={() => setJournalSaved(false)}>Update reflection</button>
+            </div>
+          ) : (
+            <>
+              <div className="mdc-journal-prompt-shell">
+                <p className="mdc-journal-prompt-label">Prompt</p>
+                <p className="mdc-journal-prompt-text">{JOURNAL_PROMPTS[promptIndex]}</p>
+                <button className="mdc-journal-next" onClick={rotatePrompt}>Try another prompt</button>
+              </div>
+
+              <textarea
+                className="mdc-note-input mdc-journal-input"
+                placeholder="Write your reflection here..."
+                value={journalText}
+                onChange={e => { setJournalText(e.target.value); setJournalSaved(false) }}
+                rows={5}
+              />
+              <div className="mdc-journal-actions">
+                <p className="mdc-journal-count">{journalText.trim().split(/\s+/).filter(Boolean).length} words</p>
+                <button className="mdc-save-btn" onClick={saveJournal} disabled={journalText.trim().length < 10}>
+                  Save Reflection
+                </button>
+              </div>
+            </>
+          )}
+
+          {journalHistory.length > 0 && (
+            <div className="mdc-journal-history">
+              <p className="mdc-journal-history-label">Recent reflections</p>
+              {journalHistory.map(entry => (
+                <div key={entry.ts} className="mdc-journal-item">
+                  <div className="mdc-journal-item-top">
+                    <span>{new Date(entry.ts).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                    <span>{entry.wordCount || entry.text.trim().split(/\s+/).filter(Boolean).length} words</span>
+                  </div>
+                  <p className="mdc-journal-item-text">{entry.text}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── Growth Milestones ── */}
+        <p className="mdc-label">Growth Milestones</p>
+        <div className="mdc-card">
+          <div className="mdc-card-header">
+            <span className="mdc-card-icon">🌱</span>
+            <div>
+              <h3 className="mdc-card-title">Progress Path</h3>
+              <p className="mdc-card-sub">{unlockedCount} of {milestones.length} milestones unlocked</p>
+            </div>
+          </div>
+
+          <div className="mdc-milestone-progress-shell" aria-label="Milestone progress">
+            <div className="mdc-milestone-progress-bar" style={{ width: `${milestoneProgress}%` }} />
+          </div>
+
+          <div className="mdc-milestone-grid">
+            {milestones.map(m => {
+              const achieved = m.current >= m.target
+              const progress = Math.min(100, Math.round((m.current / m.target) * 100))
+              return (
+                <div key={m.id} className={`mdc-milestone-card ${achieved ? 'mdc-milestone-card--done' : ''}`}>
+                  <div className="mdc-milestone-title-row">
+                    <span className="mdc-milestone-icon">{m.icon}</span>
+                    <p className="mdc-milestone-title">{m.title}</p>
+                  </div>
+                  <p className="mdc-milestone-detail">{m.detail}</p>
+                  <p className="mdc-milestone-meta">
+                    <strong>{Math.min(m.current, m.target)}</strong> / {m.target}
+                  </p>
+                  <div className="mdc-milestone-track">
+                    <div className="mdc-milestone-fill" style={{ width: `${progress}%` }} />
+                  </div>
+                  <p className={`mdc-milestone-status ${achieved ? 'mdc-milestone-status--done' : ''}`}>
+                    {achieved ? 'Unlocked' : `${progress}% complete`}
+                  </p>
+                </div>
+              )
+            })}
           </div>
         </div>
 

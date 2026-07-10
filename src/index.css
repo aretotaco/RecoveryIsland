@@ -1,5 +1,5 @@
-@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Jost:wght@300;400;500&display=swap');
+@import "tailwindcss";
 
 * {
   margin: 0;
@@ -219,7 +219,7 @@ body {
   position: relative;
   overflow-x: hidden;
   overflow-y: auto;
-  padding-bottom: 60px;
+  padding-bottom: 140px;
 }
 
 .villa-bg {
@@ -360,6 +360,65 @@ body {
   max-width: 1100px;
   margin: 0 auto;
   padding: 0 24px;
+}
+
+.villa-fixed-nav {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: min(760px, calc(100vw - 24px));
+  padding: 0 8px;
+}
+
+.villa-nav-btn {
+  width: 260px;
+  min-height: 48px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(20,20,30,0.72);
+  backdrop-filter: blur(8px);
+  color: rgba(255,240,200,0.82);
+  cursor: pointer;
+  font-size: 0.85rem;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.villa-nav-btn:hover {
+  background: rgba(30,30,45,0.88);
+  border-color: rgba(255,255,255,0.25);
+}
+
+.villa-nav-btn--primary {
+  border: none;
+  color: #1a1a2e;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--villa-color), var(--villa-color-light));
+}
+
+@media (max-width: 700px) {
+  .villa-fixed-nav {
+    width: calc(100vw - 20px);
+    gap: 8px;
+    bottom: 14px;
+    flex-wrap: wrap;
+  }
+
+  .villa-nav-btn {
+    width: 100%;
+    max-width: none;
+    min-height: 46px;
+  }
 }
 
 .villa-card {
@@ -1946,4 +2005,242 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 14px;
+}
+
+.mdc-journal-prompt-shell {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+
+.mdc-journal-prompt-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 6px;
+}
+
+.mdc-journal-prompt-text {
+  font-size: 14px;
+  color: rgba(255,255,255,0.84);
+  line-height: 1.65;
+  margin-bottom: 10px;
+}
+
+.mdc-journal-next {
+  background: none;
+  border: none;
+  color: #c4b5fd;
+  font-family: 'Jost', sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.mdc-journal-next:hover {
+  opacity: 0.8;
+}
+
+.mdc-journal-input {
+  min-height: 120px;
+}
+
+.mdc-journal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mdc-journal-count {
+  font-size: 12px;
+  color: rgba(255,255,255,0.42);
+}
+
+.mdc-save-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.mdc-journal-saved {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.mdc-journal-saved-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 8px;
+}
+
+.mdc-journal-saved-prompt {
+  font-size: 12.5px;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.55;
+  margin-bottom: 8px;
+}
+
+.mdc-journal-saved-text {
+  font-size: 14px;
+  color: rgba(255,255,255,0.82);
+  line-height: 1.75;
+  margin-bottom: 12px;
+  white-space: pre-wrap;
+}
+
+.mdc-journal-history {
+  margin-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mdc-journal-history-label {
+  font-size: 11px;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.38);
+}
+
+.mdc-journal-item {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.mdc-journal-item-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 6px;
+}
+
+.mdc-journal-item-text {
+  font-size: 13px;
+  color: rgba(255,255,255,0.72);
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mdc-milestone-progress-shell {
+  width: 100%;
+  height: 10px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.mdc-milestone-progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #10b981, #84cc16);
+  transition: width 0.25s ease;
+}
+
+.mdc-milestone-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.mdc-milestone-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.mdc-milestone-card--done {
+  border-color: rgba(16,185,129,0.6);
+  box-shadow: inset 0 0 0 1px rgba(16,185,129,0.25);
+}
+
+.mdc-milestone-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.mdc-milestone-icon {
+  font-size: 18px;
+}
+
+.mdc-milestone-title {
+  font-size: 14px;
+  color: white;
+  font-weight: 600;
+}
+
+.mdc-milestone-detail {
+  font-size: 12px;
+  color: rgba(255,255,255,0.52);
+  line-height: 1.55;
+  min-height: 36px;
+}
+
+.mdc-milestone-meta {
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.6);
+}
+
+.mdc-milestone-track {
+  margin-top: 8px;
+  width: 100%;
+  height: 8px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.mdc-milestone-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+}
+
+.mdc-milestone-status {
+  margin-top: 8px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 0.4px;
+}
+
+.mdc-milestone-status--done {
+  color: #10b981;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .mdc-card {
+    padding: 20px;
+  }
+
+  .mdc-journal-actions {
+    align-items: stretch;
+  }
+
+  .mdc-journal-actions .mdc-save-btn {
+    width: 100%;
+  }
 }

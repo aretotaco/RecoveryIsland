@@ -1,24 +1,6 @@
 import { useState } from 'react'
 import VillaLayout from '../components/VillaLayout'
-
-const MOVEMENTS = [
-  { id: 'walk',    label: 'Walk / Stroll',   emoji: '\u{1F6B6}', mins: 15 },
-  { id: 'stretch', label: 'Stretching',       emoji: '\u{1F646}', mins: 10 },
-  { id: 'yoga',    label: 'Yoga',             emoji: '\u{1F9D8}', mins: 20 },
-  { id: 'run',     label: 'Run / Jog',        emoji: '\u{1F3C3}', mins: 20 },
-  { id: 'swim',    label: 'Swimming',          emoji: '\u{1F3CA}', mins: 30 },
-  { id: 'dance',   label: 'Dance',             emoji: '\u{1F483}', mins: 15 },
-  { id: 'gym',     label: 'Strength Training', emoji: '\u{1F3CB}', mins: 30 },
-  { id: 'cycle',   label: 'Cycling',           emoji: '\u{1F6B4}', mins: 20 },
-]
-
-const NUTRITION_TIPS = [
-  { mood: 'Anxious',   emoji: '\u{1F630}', color: '#8b5cf6', foods: ['Magnesium-rich foods: dark chocolate, almonds, spinach', 'Chamomile tea or warm lemon water', 'Omega-3s: salmon, walnuts, chia seeds', 'Avoid excess caffeine and refined sugar'], why: 'Magnesium calms the nervous system. Omega-3s reduce cortisol levels.' },
-  { mood: 'Low / Sad', emoji: '\u{1F614}', color: '#6366f1', foods: ['Tryptophan-rich: turkey, eggs, banana, oats', 'Dark leafy greens for folate (B9)', 'Complex carbs: sweet potato, brown rice', 'Fermented foods: yoghurt, kefir for gut health'], why: 'Tryptophan helps produce serotonin. 95% of serotonin is made in the gut.' },
-  { mood: 'Fatigued',  emoji: '\u{1F634}', color: '#f59e0b', foods: ['Iron-rich: lentils, spinach, red meat', 'Hydration: aim for 8 glasses of water', 'B12: eggs, dairy, or a supplement if needed', 'Avoid heavy, processed meals mid-day'], why: 'Dehydration and low B12 are common, overlooked causes of persistent fatigue.' },
-  { mood: 'Stressed',  emoji: '\u{1F624}', color: '#ef4444', foods: ['Vitamin C: citrus, strawberries, bell peppers', 'Magnesium: pumpkin seeds, black beans', 'Herbal teas: lavender, passionflower, lemon balm', 'Dark chocolate (70%+) in moderation'], why: "Vitamin C blunts cortisol spikes. Magnesium supports the body's stress response." },
-  { mood: 'Unfocused', emoji: '\u{1F300}', color: '#10b981', foods: ['Blueberries -- rich in flavonoids for cognition', 'Eggs: choline supports memory and focus', 'Avocado: healthy fats for brain function', 'Stay hydrated -- even mild dehydration affects focus'], why: 'The brain is 75% water. Healthy fats are essential for neurotransmitter function.' },
-]
+import { syncEntry } from '../lib/villaSync'
 
 const ROUTINE_ITEMS = {
   morning: [
@@ -49,28 +31,106 @@ const SLEEP_QUALITY = [
   { val: 1, label: 'Poor',  emoji: '\u{1F635}', color: '#ef4444' },
 ]
 
+const MOVEMENT_PRESETS = [
+  { id: 'walk', label: 'Walk / Stroll', emoji: '\u{1F6B6}', mins: 15, burn: 55 },
+  { id: 'stretch', label: 'Stretching', emoji: '\u{1F646}', mins: 10, burn: 28 },
+  { id: 'yoga', label: 'Yoga', emoji: '\u{1F9D8}', mins: 20, burn: 65 },
+  { id: 'run', label: 'Run / Jog', emoji: '\u{1F3C3}', mins: 20, burn: 180 },
+  { id: 'swim', label: 'Swimming', emoji: '\u{1F3CA}', mins: 30, burn: 220 },
+  { id: 'dance', label: 'Dance', emoji: '\u{1F483}', mins: 15, burn: 90 },
+  { id: 'gym', label: 'Strength Training', emoji: '\u{1F3CB}', mins: 30, burn: 170 },
+  { id: 'cycle', label: 'Cycling', emoji: '\u{1F6B4}', mins: 20, burn: 140 },
+]
+
+const MEAL_MOOD_TIPS = [
+  { mood: 'Anxious', emoji: '\u{1F630}', color: '#8b5cf6', foods: ['Magnesium-rich foods like spinach, almonds, and dark chocolate', 'Chamomile tea or warm water', 'Omega-3s like salmon, walnuts, and chia seeds'], why: 'These choices support nervous-system regulation and reduce stress spikes.' },
+  { mood: 'Low / Sad', emoji: '\u{1F614}', color: '#6366f1', foods: ['Eggs, oats, banana, and yoghurt', 'Leafy greens and colourful fruit', 'Warm, steady meals with complex carbs'], why: 'Balanced carbs and protein help steadier energy and mood.' },
+  { mood: 'Fatigued', emoji: '\u{1F634}', color: '#f59e0b', foods: ['Iron-rich foods like lentils and spinach', 'B12 sources like eggs and dairy', 'Hydrating meals and plenty of water'], why: 'Fatigue often gets worse with dehydration and missed meals.' },
+  { mood: 'Stressed', emoji: '\u{1F624}', color: '#ef4444', foods: ['Vitamin C foods like citrus and berries', 'Pumpkin seeds and black beans', 'Herbal tea and simple, easy-to-digest meals'], why: 'Gentle food choices can help your body recover from stress.' },
+  { mood: 'Unfocused', emoji: '\u{1F300}', color: '#10b981', foods: ['Blueberries, avocado, eggs, and whole grains', 'Protein at breakfast', 'Water before caffeine'], why: 'Stable blood sugar and hydration improve concentration.' },
+]
+
 function todayKey() { return new Date().toDateString() }
 function readLS(k, fb) { try { return JSON.parse(localStorage.getItem(k) || 'null') ?? fb } catch { return fb } }
 
+function estimateBurn(minutes, label) {
+  const preset = MOVEMENT_PRESETS.find(item => item.label === label)
+  const base = preset ? preset.burn / preset.mins : 5
+  return Math.round(minutes * base)
+}
+
+const SELECT_STYLE = {
+  width: '100%',
+  padding: '10px 12px',
+  borderRadius: 10,
+  border: '1px solid rgba(255,255,255,0.15)',
+  background: 'rgba(15,23,42,0.9)',
+  color: 'rgba(255,255,255,0.92)',
+}
+
+const SELECT_OPTION_STYLE = { color: '#111827', background: '#ffffff' }
+
 function MovementTracker() {
   const key = `ri_movement_${todayKey()}`
-  const [done, setDone] = useState(() => readLS(key, []))
+  const [state, setState] = useState(() => {
+    const stored = readLS(key, null)
+    if (Array.isArray(stored)) return { preset: stored, custom: [] }
+    return stored || { preset: [], custom: [] }
+  })
+  const [customLabel, setCustomLabel] = useState('')
+  const [customMinutes, setCustomMinutes] = useState(20)
+  const [customIntensity, setCustomIntensity] = useState('moderate')
 
-  function toggle(id) {
-    const next = done.includes(id) ? done.filter(d => d !== id) : [...done, id]
-    setDone(next)
+  function persist(next) {
+    setState(next)
     try { localStorage.setItem(key, JSON.stringify(next)) } catch {}
   }
 
-  const totalMins = done.reduce((s, id) => s + (MOVEMENTS.find(m => m.id === id)?.mins || 0), 0)
+  function togglePreset(id) {
+    const nextPreset = state.preset.includes(id) ? state.preset.filter(item => item !== id) : [...state.preset, id]
+    const nextState = { ...state, preset: nextPreset }
+    persist(nextState)
+    syncEntry({
+      category: 'wellness',
+      source: 'movement-tracker',
+      entryKey: todayKey(),
+      payload: nextState,
+    })
+  }
+
+  function addCustomActivity() {
+    const label = customLabel.trim()
+    if (!label) return
+    const minutes = Math.max(5, Number(customMinutes) || 0)
+    const entry = { id: Date.now(), label, minutes, intensity: customIntensity }
+    const nextState = { ...state, custom: [...state.custom, entry] }
+    persist(nextState)
+    syncEntry({
+      category: 'wellness',
+      source: 'movement-tracker',
+      entryKey: `${todayKey()}-${entry.id}`,
+      payload: entry,
+    })
+    setCustomLabel('')
+    setCustomMinutes(20)
+    setCustomIntensity('moderate')
+  }
+
+  const presetMinutes = state.preset.reduce((sum, id) => sum + (MOVEMENT_PRESETS.find(m => m.id === id)?.mins || 0), 0)
+  const customMinutesTotal = state.custom.reduce((sum, entry) => sum + entry.minutes, 0)
+  const totalMins = presetMinutes + customMinutesTotal
+  const estimatedBurn = state.preset.reduce((sum, id) => {
+    const item = MOVEMENT_PRESETS.find(m => m.id === id)
+    return sum + (item ? item.burn : 0)
+  }, 0) + state.custom.reduce((sum, entry) => sum + estimateBurn(entry.minutes, entry.label), 0)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 8 }}>
-        {MOVEMENTS.map(m => {
-          const active = done.includes(m.id)
+        {MOVEMENT_PRESETS.map(m => {
+          const active = state.preset.includes(m.id)
           return (
-            <button key={m.id} onClick={() => toggle(m.id)} style={{
+            <button key={m.id} onClick={() => togglePreset(m.id)} style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
               padding: '12px 8px', borderRadius: 12,
               border: active ? '1.5px solid rgba(74,222,128,0.6)' : '1.5px solid rgba(255,215,150,0.15)',
@@ -79,14 +139,38 @@ function MovementTracker() {
             }}>
               <span style={{ fontSize: 22 }}>{active ? '✅' : m.emoji}</span>
               <span style={{ fontSize: '0.78rem', textAlign: 'center', color: active ? 'rgba(74,222,128,0.9)' : 'rgba(255,240,200,0.6)' }}>{m.label}</span>
-              <span style={{ fontSize: '0.7rem', color: 'rgba(255,240,200,0.35)' }}>{m.mins} min</span>
+              <span style={{ fontSize: '0.7rem', color: 'rgba(255,240,200,0.35)' }}>{m.mins} min · ~{m.burn} cal</span>
             </button>
           )
         })}
       </div>
-      {done.length > 0 && (
+
+      <div style={{ display: 'grid', gap: 10, padding: 14, borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+        <p style={{ fontSize: '0.82rem', color: 'rgba(255,240,200,0.5)' }}>Add any activity, even if it is not on the list.</p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 0.7fr 0.9fr auto', gap: 8 }}>
+          <input value={customLabel} onChange={e => setCustomLabel(e.target.value)} placeholder="Walk to class, football, dance practice..." style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.06)', color: 'white' }} />
+          <input type="number" min="5" value={customMinutes} onChange={e => setCustomMinutes(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.06)', color: 'white' }} />
+          <select value={customIntensity} onChange={e => setCustomIntensity(e.target.value)} style={SELECT_STYLE}>
+            <option value="light" style={SELECT_OPTION_STYLE}>Light</option>
+            <option value="moderate" style={SELECT_OPTION_STYLE}>Moderate</option>
+            <option value="vigorous" style={SELECT_OPTION_STYLE}>Vigorous</option>
+          </select>
+          <button onClick={addCustomActivity} style={{ padding: '10px 14px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, #22c55e, #16a34a)', color: 'white', cursor: 'pointer' }}>Add</button>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {state.custom.map(entry => (
+          <div key={entry.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: 12, padding: '10px 12px', background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.18)', color: 'rgba(255,240,200,0.8)' }}>
+            <span>{entry.label} · {entry.minutes} min</span>
+            <span style={{ color: 'rgba(74,222,128,0.95)' }}>~{estimateBurn(entry.minutes, entry.label)} cal</span>
+          </div>
+        ))}
+      </div>
+
+      {totalMins > 0 && (
         <div style={{ background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.25)', borderRadius: 10, padding: '10px 14px', fontSize: '0.85rem', color: 'rgba(74,222,128,0.85)', textAlign: 'center' }}>
-          {done.length} {done.length === 1 ? 'activity' : 'activities'} today -- {totalMins} minutes of movement!
+          {totalMins} minutes of movement logged today, with an estimated {estimatedBurn} calories burned.
         </div>
       )}
     </div>
@@ -95,13 +179,41 @@ function MovementTracker() {
 
 function NourishmentGuide() {
   const [selected, setSelected] = useState(null)
-  const tip = selected !== null ? NUTRITION_TIPS[selected] : null
+  const [mealText, setMealText] = useState('')
+  const [mealMoment, setMealMoment] = useState('breakfast')
+  const [reflection, setReflection] = useState('')
+  const [mealLogs, setMealLogs] = useState(() => readLS(`ri_meals_${todayKey()}`, []))
+  const tip = selected !== null ? MEAL_MOOD_TIPS[selected] : null
+
+  function saveMeal() {
+    if (!mealText.trim()) return
+    const entry = {
+      id: Date.now(),
+      text: mealText.trim(),
+      moment: mealMoment,
+      mood: tip?.mood || 'Neutral',
+      reflection: reflection.trim(),
+      ts: Date.now(),
+    }
+    const next = [entry, ...mealLogs].slice(0, 6)
+    setMealLogs(next)
+    try { localStorage.setItem(`ri_meals_${todayKey()}`, JSON.stringify(next)) } catch {}
+    syncEntry({
+      category: 'wellness',
+      source: 'nourishment-guide',
+      entryKey: `${todayKey()}-${entry.id}`,
+      payload: { text: entry.text, moment: entry.moment, mood: entry.mood, reflection: entry.reflection },
+    })
+    setMealText('')
+    setMealMoment('breakfast')
+    setReflection('')
+  }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <p style={{ fontSize: '0.82rem', color: 'rgba(255,240,200,0.5)' }}>How are you feeling? Select a mood for personalised food guidance.</p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <p style={{ fontSize: '0.82rem', color: 'rgba(255,240,200,0.5)' }}>Select a mood to get gentle food ideas, then note what you ate and how it felt in your body. No calorie guesswork.</p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-        {NUTRITION_TIPS.map((t, i) => (
+        {MEAL_MOOD_TIPS.map((t, i) => (
           <button key={i} onClick={() => setSelected(selected === i ? null : i)} style={{
             display: 'flex', alignItems: 'center', gap: 7, padding: '8px 14px', borderRadius: 999,
             border: selected === i ? `1.5px solid ${t.color}` : '1.5px solid rgba(255,215,150,0.15)',
@@ -126,6 +238,39 @@ function NourishmentGuide() {
           <div style={{ marginTop: 12, padding: '10px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: 10, fontSize: '0.78rem', color: 'rgba(255,240,200,0.5)', fontStyle: 'italic' }}>
             {tip.why}
           </div>
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gap: 12, padding: 14, borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+        <div style={{ display: 'grid', gap: 10 }}>
+          <input value={mealText} onChange={e => setMealText(e.target.value)} placeholder="What did you eat or drink?" style={{ width: '100%', padding: '11px 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.06)', color: 'white' }} />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8 }}>
+            <select value={mealMoment} onChange={e => setMealMoment(e.target.value)} style={SELECT_STYLE}>
+              <option value="breakfast" style={SELECT_OPTION_STYLE}>Breakfast</option>
+              <option value="lunch" style={SELECT_OPTION_STYLE}>Lunch</option>
+              <option value="dinner" style={SELECT_OPTION_STYLE}>Dinner</option>
+              <option value="snack" style={SELECT_OPTION_STYLE}>Snack</option>
+            </select>
+            <textarea value={reflection} onChange={e => setReflection(e.target.value)} placeholder="How did it leave you feeling afterwards?" rows={2} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.06)', color: 'white', resize: 'vertical' }} />
+          </div>
+          <button onClick={saveMeal} style={{ padding: '11px 14px', borderRadius: 999, border: 'none', background: 'linear-gradient(135deg, #f97316, #fb7185)', color: 'white', cursor: 'pointer' }}>
+            Save nourishment check-in
+          </button>
+        </div>
+      </div>
+
+      {mealLogs.length > 0 && (
+        <div style={{ display: 'grid', gap: 10 }}>
+          <p style={{ fontSize: '0.82rem', color: 'rgba(255,240,200,0.5)' }}>Recent nourishment check-ins</p>
+          {mealLogs.map(entry => (
+            <div key={entry.id} style={{ display: 'grid', gap: 6, padding: 12, borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div>
+                <div style={{ color: 'white', fontSize: '0.9rem', marginBottom: 4 }}>{entry.text}</div>
+                <div style={{ fontSize: '0.75rem', color: 'rgba(255,240,200,0.45)' }}>{entry.mood} · {entry.moment || 'meal'}</div>
+              </div>
+              {entry.reflection && <div style={{ color: 'rgba(255,240,200,0.7)', fontSize: '0.8rem', lineHeight: 1.6 }}>{entry.reflection}</div>}
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -200,6 +345,12 @@ function SleepTracker() {
     setEntry(e)
     setSaved(true)
     try { localStorage.setItem(key, JSON.stringify(e)) } catch {}
+    syncEntry({
+      category: 'wellness',
+      source: 'sleep-tracker',
+      entryKey: todayKey(),
+      payload: e,
+    })
   }
 
   return (
@@ -268,13 +419,13 @@ export default function WellnessVilla() {
         {
           icon: '\u{1F3C3}',
           title: 'Movement Tracker',
-          text: "Mindful movement is one of the most powerful things you can do for your mental health. Tick off what you've done today -- any movement counts.",
+          text: "Mindful movement is one of the most powerful things you can do for your mental health. Tick off what you've done today or add a custom activity if it is not on the list.",
           component: <MovementTracker />
         },
         {
           icon: '\u{1F957}',
           title: 'Nourishment & Mood',
-          text: 'What you eat directly affects how you feel. Select a mood to discover which foods support your brain and body right now.',
+          text: 'What you eat can shape your energy, focus, and comfort. Select a mood to discover supportive foods, then keep a realistic note-based nourishment log instead of fixed calorie guesses.',
           component: <NourishmentGuide />
         },
         {

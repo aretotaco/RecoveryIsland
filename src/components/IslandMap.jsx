@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
+import { MaiaAvatarSvg } from './MaiaAvatar'
+import { loadUserProfile } from '../lib/userProfile'
 
 const villas = [
   {
@@ -324,7 +326,9 @@ const JOURNEY = [
   },
 ]
 
-function WelcomeAvatar({ onNavigate }) {
+function WelcomeAvatar({ onNavigate, profile }) {
+  const displayName = profile?.name || 'Traveller'
+  const avatarCfg = profile?.avatar
   const [stepKey, setStepKey] = useState(
     () => localStorage.getItem('ri-journey') || 'welcome'
   )
@@ -342,6 +346,8 @@ function WelcomeAvatar({ onNavigate }) {
     } else if (nextKey !== stepKey) {
       localStorage.setItem('ri-journey', nextKey)
       setStepKey(nextKey)
+    } else {
+      setBubbleOpen(false)
     }
   }
 
@@ -360,7 +366,7 @@ function WelcomeAvatar({ onNavigate }) {
       {bubbleOpen && (
         <div className={`welcome-bubble${isWelcome ? ' welcome-bubble--wide' : ''}`}>
           <div className="bubble-header">
-            <span className="bubble-guide-name">Maia</span>
+            <span className="bubble-guide-name">{displayName}</span>
             <button className="welcome-bubble-close" onClick={() => setBubbleOpen(false)}>×</button>
           </div>
 
@@ -405,103 +411,11 @@ function WelcomeAvatar({ onNavigate }) {
       )}
 
       <div className="welcome-avatar-figure" onClick={() => setBubbleOpen(v => !v)} title="Click to chat with Maia">
-        <svg viewBox="0 0 80 100" width="120" height="150">
-          <defs>
-            <radialGradient id="mg-body" cx="42%" cy="30%" r="68%">
-              <stop offset="0%" stopColor="#fef3c7" />
-              <stop offset="55%" stopColor="#fde68a" />
-              <stop offset="100%" stopColor="#f59e0b" />
-            </radialGradient>
-            <radialGradient id="mg-face" cx="38%" cy="30%" r="62%">
-              <stop offset="0%" stopColor="#fef9ee" />
-              <stop offset="65%" stopColor="#fde8d0" />
-              <stop offset="100%" stopColor="#fcd9ae" />
-            </radialGradient>
-            <radialGradient id="mg-glow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.55" />
-              <stop offset="100%" stopColor="#fbbf24" stopOpacity="0" />
-            </radialGradient>
-          </defs>
-
-          {/* Pulsing warm aura */}
-          <circle cx="40" cy="54" r="36" fill="url(#mg-glow)">
-            <animate attributeName="r" values="33;40;33" dur="4s" repeatCount="indefinite" />
-            <animate attributeName="opacity" values="0.5;1;0.5" dur="4s" repeatCount="indefinite" />
-          </circle>
-
-          {/* Floating petal accents */}
-          <ellipse cx="7" cy="48" rx="5.5" ry="2.2" fill="#f97316" opacity="0.5" transform="rotate(-42,7,48)" />
-          <ellipse cx="73" cy="43" rx="5" ry="2" fill="#f97316" opacity="0.45" transform="rotate(38,73,43)" />
-          <ellipse cx="4" cy="65" rx="4" ry="1.8" fill="#fbbf24" opacity="0.45" transform="rotate(-25,4,65)" />
-          <ellipse cx="76" cy="63" rx="4" ry="1.8" fill="#fbbf24" opacity="0.4" transform="rotate(28,76,63)" />
-
-          {/* Body / gown */}
-          <ellipse cx="40" cy="73" rx="22" ry="22" fill="url(#mg-body)" />
-          <path d="M18,80 Q40,98 62,80 Q52,94 40,97 Q28,94 18,80Z" fill="#d97706" opacity="0.5" />
-
-          {/* Neck */}
-          <rect x="35" y="52" width="10" height="9" rx="3" fill="#fde68a" />
-
-          {/* Head */}
-          <circle cx="40" cy="36" r="22" fill="url(#mg-face)" />
-
-          {/* Hair – warm dark brown */}
-          <ellipse cx="40" cy="18" rx="22" ry="11" fill="#2d1b00" />
-          <ellipse cx="40" cy="20" rx="18" ry="8" fill="#3d2314" />
-          <path d="M18,26 Q10,40 14,55" stroke="#2d1b00" strokeWidth="8" fill="none" strokeLinecap="round" />
-          <path d="M62,26 Q70,40 66,55" stroke="#2d1b00" strokeWidth="8" fill="none" strokeLinecap="round" />
-
-          {/* Flower crown */}
-          <circle cx="31" cy="15" r="3.5" fill="#fb923c" opacity="0.9" />
-          <circle cx="40" cy="11" r="4.2" fill="#f9a8d4" opacity="0.95" />
-          <circle cx="49" cy="15" r="3.5" fill="#fb923c" opacity="0.9" />
-          <circle cx="31" cy="15" r="1.8" fill="white" opacity="0.75" />
-          <circle cx="40" cy="11" r="2.2" fill="white" opacity="0.75" />
-          <circle cx="49" cy="15" r="1.8" fill="white" opacity="0.75" />
-
-          {/* Eyes */}
-          <ellipse cx="31" cy="34" rx="5" ry="6" fill="white" opacity="0.95" />
-          <ellipse cx="49" cy="34" rx="5" ry="6" fill="white" opacity="0.95" />
-          <ellipse cx="31.5" cy="35.5" rx="3.2" ry="4" fill="#78350f" />
-          <ellipse cx="49.5" cy="35.5" rx="3.2" ry="4" fill="#78350f" />
-          <circle cx="33" cy="34" r="1.4" fill="white" />
-          <circle cx="51" cy="34" r="1.4" fill="white" />
-
-          {/* Eyelashes */}
-          <path d="M26,29 Q28,26 31,29" stroke="#2d1b00" strokeWidth="1.1" fill="none" strokeLinecap="round" />
-          <path d="M44,29 Q46,26 49,29" stroke="#2d1b00" strokeWidth="1.1" fill="none" strokeLinecap="round" />
-
-          {/* Warm rosy cheeks */}
-          <ellipse cx="21" cy="39" rx="5" ry="3.5" fill="#fda4af" opacity="0.4" />
-          <ellipse cx="59" cy="39" rx="5" ry="3.5" fill="#fda4af" opacity="0.4" />
-
-          {/* Smile */}
-          <path d="M28,45 Q40,56 52,45" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.9" />
-
-          {/* Gentle nose */}
-          <circle cx="40" cy="42" r="1.2" fill="rgba(255,255,255,0.4)" />
-
-          {/* Heart glow on chest */}
-          <path d="M36,66 Q40,62 44,66 Q44,73 40,77 Q36,73 36,66Z" fill="white" opacity="0.2" />
-
-          {/* Waving left arm */}
-          <g className="guide-wave-arm" style={{ transformOrigin: '18px 60px' }}>
-            <path d="M18,60 Q8,50 6,37" stroke="#fde68a" strokeWidth="9" fill="none" strokeLinecap="round" />
-            <circle cx="6" cy="36" r="6.5" fill="#fef3c7" opacity="0.9" />
-            <circle cx="6" cy="36" r="3.5" fill="white" opacity="0.55" />
-          </g>
-
-          {/* Right arm */}
-          <path d="M62,60 Q72,54 74,62" stroke="#fde68a" strokeWidth="9" fill="none" strokeLinecap="round" />
-          <circle cx="74.5" cy="63" r="5.5" fill="#fef3c7" opacity="0.85" />
-
-          {/* Shadow */}
-          <ellipse cx="40" cy="98" rx="18" ry="3" fill="rgba(0,0,0,0.12)" />
-        </svg>
+        <MaiaAvatarSvg config={avatarCfg} width={120} height={150} animated={true} />
       </div>
 
       {!bubbleOpen && (
-        <div className="maia-name-tag" onClick={() => setBubbleOpen(true)}>Maia 🌸</div>
+        <div className="maia-name-tag" onClick={() => setBubbleOpen(true)}>{displayName} 🌸</div>
       )}
     </div>
   )
@@ -510,6 +424,7 @@ function WelcomeAvatar({ onNavigate }) {
 export default function IslandMap() {
   const navigate = useNavigate()
   const [hovered, setHovered] = useState(null)
+  const profile = loadUserProfile()
 
   return (
     <div className="island-wrapper">
@@ -525,6 +440,7 @@ export default function IslandMap() {
 
       <div className="island-title">
         <h1>Recovery Island</h1>
+        <p>Welcome back, {profile.name}</p>
         <p>Choose your wellness destination</p>
       </div>
 
@@ -833,7 +749,7 @@ export default function IslandMap() {
         )
       })()}
 
-      <WelcomeAvatar onNavigate={navigate} />
+      <WelcomeAvatar onNavigate={navigate} profile={profile} />
     </div>
   )
 }

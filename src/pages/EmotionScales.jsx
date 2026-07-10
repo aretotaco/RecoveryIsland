@@ -1,5 +1,19 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+import { fetchEntries, syncEntry } from '../lib/villaSync'
+
+const ANSWERS_KEY = 'ri_score_answers'
+const SCORES_KEY = 'ri_scores'
+const SCORE_HISTORY_KEY = 'ri_score_history'
+
+function readLS(key, fallback) {
+  try {
+    return JSON.parse(localStorage.getItem(key) || 'null') ?? fallback
+  } catch {
+    return fallback
+  }
+}
 
 const PSS_QS = [
   { text: 'In the last month, how often have you been upset because of something that happened unexpectedly?', rev: false },
@@ -258,14 +272,50 @@ function ScaleSection({ scale, allAnswers, onChange }) {
 
 export default function EmotionScales() {
   const navigate = useNavigate()
-  const [answers, setAnswers] = useState({})
-  const [showResults, setShowResults] = useState(false)
+  const { isAuthenticated } = useAuth()
+  const [answers, setAnswers] = useState(() => readLS(ANSWERS_KEY, {}))
+  const [showResults, setShowResults] = useState(() => {
+    const savedAnswers = readLS(ANSWERS_KEY, {})
+    return SCALES.every(scale => scale.questions.every((_, index) => savedAnswers[scale.id]?.[index] !== undefined))
+  })
+
+  useEffect(() => {
+    if (!isAuthenticated) return undefined
+
+    let active = true
+
+    async function hydrateAssessments() {
+      const assessmentRows = await fetchEntries({ category: 'assessment', source: 'emotion-scales', limit: 12 })
+      if (!active || assessmentRows.length === 0) return
+
+      const remoteHistory = assessmentRows
+        .map(row => row.payload)
+        .filter(entry => entry?.date && entry?.scores)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+      if (remoteHistory.length === 0) return
+
+      localStorage.setItem(SCORE_HISTORY_KEY, JSON.stringify(remoteHistory))
+      localStorage.setItem(SCORES_KEY, JSON.stringify(remoteHistory[0].scores || {}))
+    }
+
+    hydrateAssessments()
+
+    return () => {
+      active = false
+    }
+  }, [isAuthenticated])
 
   function handleAnswer(scaleId, qi, val) {
-    setAnswers(prev => ({
-      ...prev,
-      [scaleId]: { ...(prev[scaleId] || {}), [qi]: val },
-    }))
+    setAnswers(prev => {
+      const next = {
+        ...prev,
+        [scaleId]: { ...(prev[scaleId] || {}), [qi]: val },
+      }
+
+      localStorage.setItem(ANSWERS_KEY, JSON.stringify(next))
+      return next
+    })
     setShowResults(false)
   }
 
@@ -320,10 +370,26 @@ export default function EmotionScales() {
           <button className="es-results-btn" onClick={() => {
             // Persist each scale's score so MoodDiaryCentre can display them
             const toSave = {}
+            const savedAt = new Date().toISOString()
             SCALES.forEach(s => {
-              toSave[s.id] = { score: computeScore(s, answers[s.id] || {}), date: new Date().toISOString() }
+              toSave[s.id] = { score: computeScore(s, answers[s.id] || {}), date: savedAt }
             })
-            localStorage.setItem('ri_scores', JSON.stringify(toSave))
+            const historyEntry = {
+              id: Date.now(),
+              date: savedAt,
+              adviceKey,
+              scores: toSave,
+            }
+            const history = [historyEntry, ...readLS(SCORE_HISTORY_KEY, [])].slice(0, 12)
+
+            localStorage.setItem(SCORES_KEY, JSON.stringify(toSave))
+            localStorage.setItem(SCORE_HISTORY_KEY, JSON.stringify(history))
+            syncEntry({
+              category: 'assessment',
+              source: 'emotion-scales',
+              entryKey: historyEntry.date,
+              payload: historyEntry,
+            })
             setShowResults(true)
           }}>
             View My Results &amp; Maia's Advice ✨
@@ -382,7 +448,11 @@ export default function EmotionScales() {
               )}
             </div>
 
-            <button className="es-retake-btn" onClick={() => { setAnswers({}); setShowResults(false) }}>
+            <button className="es-retake-btn" onClick={() => {
+              setAnswers({})
+              setShowResults(false)
+              localStorage.removeItem(ANSWERS_KEY)
+            }}>
               Retake Assessments
             </button>
           </div>

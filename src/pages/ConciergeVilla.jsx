@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MaiaGuide from '../components/MaiaGuide'
 import { MaiaAvatarSvg, MaiaAvatarBuilder, loadMaiaAvatar, saveMaiaAvatar } from '../components/MaiaAvatar'
+import { useAuth } from '../context/AuthContext'
+import { syncEntry, syncProfile } from '../lib/villaSync'
 
 const VILLAS = [
   { path: '/mood-diary',  label: 'Mood Diary Centre', emoji: '\u{1F4D3}', recommended: true,  note: 'Start here - log your first mood check-in' },
@@ -18,18 +20,27 @@ function saveConcierge(s) { try { localStorage.setItem(CONCIERGE_KEY, JSON.strin
 
 export default function ConciergeVilla() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const saved = loadConcierge()
+  const defaultName = saved?.name || user?.displayName || 'Traveller'
   const [phase,     setPhase]     = useState(saved ? 'main' : 'welcome')
   const [wizStep,   setWizStep]   = useState(0)
-  const [avatarCfg, setAvatarCfg] = useState(loadMaiaAvatar)
-  const [nameInput, setNameInput] = useState(saved?.name || '')
-  const [name,      setName]      = useState(saved?.name || '')
+  const [avatarCfg, setAvatarCfg] = useState(() => saved?.avatarConfig || user?.avatarConfig || loadMaiaAvatar())
+  const [nameInput, setNameInput] = useState(defaultName)
+  const [name,      setName]      = useState(defaultName)
   const [visited,   setVisited]   = useState(saved?.visited || [])
   const [editing,   setEditing]   = useState(false)
 
   useEffect(() => {
-    if (phase === 'main') saveConcierge({ name, visited })
-  }, [phase, name, visited])
+    if (phase === 'main') saveConcierge({ name, visited, avatarConfig: avatarCfg })
+  }, [avatarCfg, phase, name, visited])
+
+  useEffect(() => {
+    if (!saved && user?.displayName) {
+      setName(prev => prev || user.displayName)
+      setNameInput(prev => prev || user.displayName)
+    }
+  }, [saved, user])
 
   function finishWizard() {
     const n = nameInput.trim() || 'Traveller'
@@ -37,14 +48,27 @@ export default function ConciergeVilla() {
     setName(n)
     setPhase('main')
     setEditing(false)
-    saveConcierge({ name: n, visited })
+    saveConcierge({ name: n, visited, avatarConfig: avatarCfg })
+    syncProfile({ displayName: n, avatarConfig: avatarCfg })
+    syncEntry({
+      category: 'concierge',
+      source: 'concierge-villa',
+      entryKey: 'profile',
+      payload: { displayName: n, visited, avatarConfig: avatarCfg },
+    })
   }
 
   function markVisited(path) {
     if (!visited.includes(path)) {
       const next = [...visited, path]
       setVisited(next)
-      saveConcierge({ name, visited: next })
+      saveConcierge({ name, visited: next, avatarConfig: avatarCfg })
+      syncEntry({
+        category: 'concierge',
+        source: 'island-map',
+        entryKey: 'visited',
+        payload: { displayName: name || 'Traveller', visited: next, path },
+      })
     }
     navigate(path)
   }
@@ -105,7 +129,7 @@ export default function ConciergeVilla() {
               </div>
               <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.5rem', color: 'white', marginBottom: 6 }}>What is your name?</h2>
               <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', marginBottom: 20 }}>
-                Maia will greet you personally. Leave blank for "Traveller".
+                Maia will greet you personally. We prefill your account name, and you can change it any time here.
               </p>
               <input
                 type="text"

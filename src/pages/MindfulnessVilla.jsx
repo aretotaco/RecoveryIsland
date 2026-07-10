@@ -38,7 +38,7 @@ export default function MindfulnessVilla() {
           icon: '🕊️',
           title: 'Let Go Meditation',
           text: 'A calming guided meditation to help you release what you no longer need to carry — thoughts, tension, and the weight of the day.',
-          localVideoUrl: '/videos/Mindfulness - LET GO MEDITATION (FINISH).mp4'
+          videoUrl: 'https://www.youtube.com/watch?v=qUMZk17WAtQ&t=1s'
         }
       ]
     }} />

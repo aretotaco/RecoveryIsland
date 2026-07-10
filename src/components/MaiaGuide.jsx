@@ -1,6 +1,21 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MaiaAvatarSvg, loadMaiaAvatar } from './MaiaAvatar'
+import { MaiaAvatarSvg } from './MaiaAvatar'
+import { loadUserProfile } from '../lib/userProfile'
+
+function getDismissKey(villaId) {
+  return `ri_maia_dismissed_${villaId}`
+}
+
+function shouldOpenGuide(villaId) {
+  try {
+    const journeyComplete = localStorage.getItem('ri-journey') === 'complete'
+    const dismissed = localStorage.getItem(getDismissKey(villaId)) === 'true'
+    return !journeyComplete && !dismissed
+  } catch {
+    return true
+  }
+}
 
 const VILLA_GUIDES = {
   1: {
@@ -35,18 +50,25 @@ const VILLA_GUIDES = {
 
 export default function MaiaGuide({ villaId }) {
   const navigate = useNavigate()
-  const [open, setOpen] = useState(true)
-  const avatarCfg = loadMaiaAvatar()
+  const [open, setOpen] = useState(() => shouldOpenGuide(villaId))
+  const profile = loadUserProfile()
+  const avatarCfg = profile.avatar
+  const displayName = profile.name
   const guide = VILLA_GUIDES[villaId]
   if (!guide) return null
+
+  function closeGuide() {
+    try { localStorage.setItem(getDismissKey(villaId), 'true') } catch {}
+    setOpen(false)
+  }
 
   return (
     <div className="welcome-avatar-wrapper">
       {open && (
         <div className="welcome-bubble">
           <div className="bubble-header">
-            <span className="bubble-guide-name">Maia</span>
-            <button className="welcome-bubble-close" onClick={() => setOpen(false)}>×</button>
+            <span className="bubble-guide-name">{displayName}</span>
+            <button className="welcome-bubble-close" onClick={closeGuide}>×</button>
           </div>
           <p className="bubble-step-title">{guide.title}</p>
           <p className="welcome-bubble-text">{guide.message}</p>
@@ -61,7 +83,7 @@ export default function MaiaGuide({ villaId }) {
       </div>
 
       {!open && (
-        <div className="maia-name-tag" onClick={() => setOpen(true)}>Maia 🌼</div>
+        <div className="maia-name-tag" onClick={() => setOpen(true)}>{displayName} 🌼</div>
       )}
     </div>
   )

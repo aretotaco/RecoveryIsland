@@ -14,13 +14,13 @@ export default function RelaxationVilla() {
           icon: '🫁',
           title: 'Abdominal Breathing and Muscle Relaxation',
           text: 'A guided escape using deep abdominal breathing and progressive muscle relaxation to melt away tension from head to toe.',
-          localVideoUrl: '/videos/Relaxation - Escape_Abdominal Breathing and Muscle Relaxation.mp4'
+          videoUrl: 'https://www.youtube.com/embed/xtklDYGoO0M?rel=0&modestbranding=1'
         },
         {
           icon: '🎈',
           title: 'Air Balloon',
           text: 'Float gently above your worries in this soothing visualisation. Let the air balloon carry you to a place of complete calm and ease.',
-          localVideoUrl: '/videos/Relaxation - Escape_Air Bolloon.mp4'
+          videoUrl: 'https://www.youtube.com/embed/abzSsh7MrLE?rel=0&modestbranding=1'
         },
         {
           icon: '🏯',
@@ -32,19 +32,19 @@ export default function RelaxationVilla() {
           icon: '✨',
           title: 'A Land of Happiness',
           text: 'Travel to an imagined place filled with warmth, light, and joy. A gentle escape to restore your sense of peace and wellbeing.',
-          localVideoUrl: '/videos/Relaxation - Escape_A land of happiness.mp4'
+          videoUrl: 'https://www.youtube.com/embed/neADoCR6UKI?rel=0&modestbranding=1'
         },
         {
           icon: '🌸',
           title: 'A Land of Flowers',
           text: 'Wander through fields of colour and fragrance in this calming visualisation. Let nature\'s beauty ease your mind and soften your breath.',
-          localVideoUrl: '/videos/Relaxation - Escape_A land of flowers.mp4'
+          videoUrl: 'https://www.youtube.com/embed/CmnsShzC-1Q?rel=0&modestbranding=1'
         },
         {
           icon: '🛤️',
           title: 'A Journey to Relaxation',
           text: 'A guided journey inward — following the path of your breath until you arrive at a place of deep, restful calm.',
-          localVideoUrl: '/videos/Relaxation - Escape_A journey to relaxation.mp4'
+          videoUrl: 'https://www.youtube.com/embed/H0auVNEhaww?rel=0&modestbranding=1'
         },
         {
           icon: '🌙',

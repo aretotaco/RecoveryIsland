@@ -1,6 +1,35 @@
 import { useNavigate } from 'react-router-dom'
 import MaiaGuide from './MaiaGuide'
 
+function normalizeVideoUrl(url) {
+  if (!url) return ''
+
+  try {
+    const parsed = new URL(url)
+    const host = parsed.hostname.replace(/^www\./, '')
+
+    if (host === 'youtu.be') {
+      const id = parsed.pathname.slice(1)
+      return id ? `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1` : ''
+    }
+
+    if (host === 'youtube.com' || host === 'm.youtube.com') {
+      if (parsed.pathname === '/watch') {
+        const id = parsed.searchParams.get('v')
+        return id ? `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1` : ''
+      }
+
+      if (parsed.pathname.startsWith('/embed/')) {
+        parsed.searchParams.set('rel', '0')
+        parsed.searchParams.set('modestbranding', '1')
+        return parsed.toString()
+      }
+    }
+  } catch {}
+
+  return ''
+}
+
 const VILLA_ORDER = [
   { id: 1, path: '/concierge', name: 'Concierge Villa', emoji: '\u{1F3DD}' },
   { id: 2, path: '/mood-diary', name: 'Mood Diary Centre', emoji: '\u{1F4D3}' },
@@ -37,18 +66,32 @@ export default function VillaLayout({ villa }) {
       <div className="villa-content">
         {villa.sections.map((section, i) => (
           <div key={i} className="villa-card" style={{ animationDelay: `${i * 0.1}s` }}>
+            {(() => {
+              const embedUrl = normalizeVideoUrl(section.videoUrl)
+              return (
+                <>
             <div className="card-icon">{section.icon}</div>
             <h3 className="card-title">{section.title}</h3>
             <p className="card-text">{section.text}</p>
-            {section.videoUrl && (
+            {embedUrl && (
               <div className="card-video">
                 <iframe
-                  src={section.videoUrl}
+                  src={embedUrl}
                   title={section.title}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                 />
               </div>
+            )}
+            {section.videoUrl && embedUrl && (
+              <a
+                href={section.videoUrl}
+                target="_blank"
+                rel="noreferrer"
+                style={{ display: 'inline-block', marginTop: 10, color: 'rgba(255,240,200,0.75)', fontSize: '0.82rem' }}
+              >
+                If YouTube blocks the embed, open this video on YouTube.
+              </a>
             )}
             {section.localVideoUrl && (
               <div className="card-video card-video--local">
@@ -80,38 +123,30 @@ export default function VillaLayout({ villa }) {
                 {section.component}
               </div>
             )}
+                </>
+              )
+            })()}
           </div>
         ))}
 
-        <div className="villa-nav-row" style={{ display: 'flex', gap: 12, justifyContent: 'center', margin: '12px 0 32px', padding: '0 20px' }}>
-          {prevVilla && (
-            <button onClick={() => navigate(prevVilla.path)} style={{
-              flex: 1, maxWidth: 200, padding: '12px 16px', borderRadius: 14,
-              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
-              color: 'rgba(255,240,200,0.7)', cursor: 'pointer', fontSize: '0.85rem', textAlign: 'center',
-            }}>
-              {'←'} {prevVilla.emoji} {prevVilla.name}
-            </button>
-          )}
-          {nextVilla && villa.id !== 7 && (
-            <button onClick={() => navigate(nextVilla.path)} style={{
-              flex: 1, maxWidth: 200, padding: '12px 16px', borderRadius: 14,
-              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
-              color: 'rgba(255,240,200,0.7)', cursor: 'pointer', fontSize: '0.85rem', textAlign: 'center',
-            }}>
-              {nextVilla.emoji} {nextVilla.name} {'→'}
-            </button>
-          )}
-          {villa.id === 7 && (
-            <button onClick={() => navigate('/mood-diary')} style={{
-              flex: 1, maxWidth: 260, padding: '13px 20px', borderRadius: 14,
-              background: 'linear-gradient(135deg, var(--villa-color), var(--villa-color-light))',
-              border: 'none', color: '#1a1a2e', fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem',
-            }}>
-              Return to Mood Diary {'\u{1F4D3}'}
-            </button>
-          )}
-        </div>
+      </div>
+
+      <div className="villa-fixed-nav" aria-label="Villa navigation">
+        {prevVilla && (
+          <button className="villa-nav-btn" onClick={() => navigate(prevVilla.path)}>
+            {'←'} {prevVilla.emoji} {prevVilla.name}
+          </button>
+        )}
+        {nextVilla && villa.id !== 7 && (
+          <button className="villa-nav-btn" onClick={() => navigate(nextVilla.path)}>
+            {nextVilla.emoji} {nextVilla.name} {'→'}
+          </button>
+        )}
+        {villa.id === 7 && (
+          <button className="villa-nav-btn villa-nav-btn--primary" onClick={() => navigate('/mood-diary')}>
+            Return to Mood Diary {'\u{1F4D3}'}
+          </button>
+        )}
       </div>
 
       <MaiaGuide villaId={villa.id} />
