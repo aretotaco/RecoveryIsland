@@ -406,6 +406,88 @@ function SleepTracker() {
   )
 }
 
+function WeeklySummary() {
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date()
+    d.setDate(d.getDate() - (6 - i))
+    const dateStr = d.toDateString()
+    const movement = readLS(`ri_movement_${dateStr}`, null)
+    const sleep = readLS(`ri_sleep_${dateStr}`, null)
+    const meals = readLS(`ri_meals_${dateStr}`, [])
+    return { dateStr, day: d.toLocaleDateString('en', { weekday: 'short' }), movement, sleep, meals }
+  })
+
+  let totalMinutes = 0
+  let totalBurn = 0
+  let sleepHoursSum = 0
+  let sleepCount = 0
+  let nourishmentCount = 0
+
+  days.forEach(({ movement, sleep, meals }) => {
+    if (movement) {
+      const presetMinutes = (movement.preset || []).reduce((sum, id) => sum + (MOVEMENT_PRESETS.find(m => m.id === id)?.mins || 0), 0)
+      const customMinutes = (movement.custom || []).reduce((sum, e) => sum + e.minutes, 0)
+      totalMinutes += presetMinutes + customMinutes
+      totalBurn += (movement.preset || []).reduce((sum, id) => {
+        const item = MOVEMENT_PRESETS.find(m => m.id === id)
+        return sum + (item ? item.burn : 0)
+      }, 0) + (movement.custom || []).reduce((sum, e) => sum + estimateBurn(e.minutes, e.label), 0)
+    }
+    if (sleep?.hours != null) {
+      sleepHoursSum += sleep.hours
+      sleepCount += 1
+    }
+    nourishmentCount += meals.length
+  })
+
+  const avgSleep = sleepCount ? (sleepHoursSum / sleepCount).toFixed(1) : null
+  const activeDays = days.filter(d => d.movement || d.sleep || d.meals.length > 0).length
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
+        <div style={{ padding: '14px 16px', borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <p style={{ fontSize: '0.72rem', color: 'rgba(255,240,200,0.45)', marginBottom: 6 }}>Movement this week</p>
+          <p style={{ color: 'white', fontSize: '1.1rem' }}>{totalMinutes} min{totalBurn > 0 ? ` · ~${totalBurn} cal` : ''}</p>
+        </div>
+        <div style={{ padding: '14px 16px', borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <p style={{ fontSize: '0.72rem', color: 'rgba(255,240,200,0.45)', marginBottom: 6 }}>Average sleep</p>
+          <p style={{ color: 'white', fontSize: '1.1rem' }}>{avgSleep ? `${avgSleep}h` : 'No logs yet'}</p>
+        </div>
+        <div style={{ padding: '14px 16px', borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <p style={{ fontSize: '0.72rem', color: 'rgba(255,240,200,0.45)', marginBottom: 6 }}>Nourishment check-ins</p>
+          <p style={{ color: 'white', fontSize: '1.1rem' }}>{nourishmentCount}</p>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6 }}>
+        {days.map(d => {
+          const logged = d.movement || d.sleep || d.meals.length > 0
+          return (
+            <div key={d.dateStr} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: logged ? 'rgba(244,63,94,0.16)' : 'rgba(255,255,255,0.04)',
+                border: logged ? '2px solid #f43f5e' : '1px solid rgba(255,255,255,0.1)',
+                fontSize: 14,
+              }}>
+                {logged ? '✓' : '·'}
+              </div>
+              <span style={{ fontSize: '0.68rem', color: 'rgba(255,240,200,0.45)' }}>{d.day}</span>
+            </div>
+          )
+        })}
+      </div>
+
+      <p style={{ fontSize: '0.78rem', color: 'rgba(255,240,200,0.45)', textAlign: 'center' }}>
+        {activeDays > 0
+          ? `You logged something in Wellness Villa on ${activeDays} of the last 7 days.`
+          : 'Log movement, sleep, or a meal above to start building your weekly picture.'}
+      </p>
+    </div>
+  )
+}
+
 export default function WellnessVilla() {
   return (
     <VillaLayout villa={{
@@ -444,6 +526,12 @@ export default function WellnessVilla() {
           icon: '\u{1F4A7}',
           title: 'The Basics That Change Everything',
           text: "Before supplements, apps, or routines -- these fundamentals have the biggest impact: drink water before anything else each morning, spend 10 minutes in natural light daily, eat something warm and nourishing for breakfast, and protect the first and last 30 minutes of your day from screens.",
+        },
+        {
+          icon: '\u{1F4C5}',
+          title: 'Your Week at a Glance',
+          text: 'A quick look back at the movement, sleep, and nourishment you have logged over the last 7 days.',
+          component: <WeeklySummary />
         }
       ]
     }} />

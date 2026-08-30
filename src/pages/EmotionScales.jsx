@@ -157,7 +157,9 @@ const ADVICE = {
       'Visit your nearest emergency department if you are in immediate danger',
       'Contact your doctor, therapist, or a trusted person today',
     ],
-    actions: [],
+    actions: [
+      { label: 'Crisis Support', path: '/crisis-support', color: '#ef4444' },
+    ],
   },
   professional: {
     emoji: '🩺',

@@ -11,6 +11,7 @@ Add these to `.env`:
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
 - `ANTHROPIC_API_KEY` if you want the AI companion working locally
+- `SUPABASE_SERVICE_ROLE_KEY` (server-only, optional) — enables "Delete my account permanently" in Settings. Get it from Supabase Dashboard → Project Settings → API → `service_role` secret. Without it, that button shows a friendly "not configured" message; "Erase all my data" works either way.
 
 ## Development
 

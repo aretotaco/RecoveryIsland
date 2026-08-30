@@ -9,7 +9,11 @@ import InspirationVilla from './pages/InspirationVilla'
 import AIChatbot from './pages/AIChatbot'
 import EmotionScales from './pages/EmotionScales'
 import AuthPage from './pages/AuthPage'
+import CrisisSupport from './pages/CrisisSupport'
+import SettingsPage from './pages/SettingsPage'
+import InsightsDashboard from './pages/InsightsDashboard'
 import AuthHud from './components/AuthHud'
+import CrisisHud from './components/CrisisHud'
 import { AuthProvider, useAuth } from './context/AuthContext'
 
 function ProtectedRoute({ children }) {
@@ -45,8 +49,10 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <AuthHud />
+        <CrisisHud />
         <Routes>
           <Route path="/login" element={<AuthOnlyRoute><AuthPage /></AuthOnlyRoute>} />
+          <Route path="/crisis-support" element={<CrisisSupport />} />
           <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/concierge" element={<ProtectedRoute><ConciergeVilla /></ProtectedRoute>} />
           <Route path="/mood-diary" element={<ProtectedRoute><MoodDiaryCentre /></ProtectedRoute>} />
@@ -56,6 +62,8 @@ export default function App() {
           <Route path="/inspiration" element={<ProtectedRoute><InspirationVilla /></ProtectedRoute>} />
           <Route path="/ai-chatbot" element={<ProtectedRoute><AIChatbot /></ProtectedRoute>} />
           <Route path="/emotion-scales" element={<ProtectedRoute><EmotionScales /></ProtectedRoute>} />
+          <Route path="/insights" element={<ProtectedRoute><InsightsDashboard /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+import { buildSageContext } from '../lib/sageContext'
 
 const SYSTEM_PROMPT = `You are Sage, a warm and empathetic AI wellness companion living on Serenity Island. 
 
@@ -24,6 +26,7 @@ You are NOT a replacement for professional therapy. Always remind users of this 
 
 export default function AIChatbot() {
   const navigate = useNavigate()
+  const { isAuthenticated } = useAuth()
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
@@ -32,11 +35,27 @@ export default function AIChatbot() {
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [systemPrompt, setSystemPrompt] = useState(SYSTEM_PROMPT)
+  const [showCrisisBanner, setShowCrisisBanner] = useState(false)
   const bottomRef = useRef(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
+
+  useEffect(() => {
+    if (!isAuthenticated) return undefined
+
+    let active = true
+
+    buildSageContext().then(({ contextText, isCrisisTier }) => {
+      if (!active) return
+      if (contextText) setSystemPrompt(`${SYSTEM_PROMPT}\n\n${contextText}`)
+      if (isCrisisTier) setShowCrisisBanner(true)
+    }).catch(() => {})
+
+    return () => { active = false }
+  }, [isAuthenticated])
 
   async function sendMessage() {
     if (!input.trim() || loading) return
@@ -52,7 +71,7 @@ export default function AIChatbot() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          system: SYSTEM_PROMPT,
+          system: systemPrompt,
           messages: newMessages
         })
       })
@@ -105,6 +124,28 @@ export default function AIChatbot() {
       <div className="chat-disclaimer">
         ⚠️ Sage is an AI companion, not a licensed therapist. If you are in crisis, please contact a professional helpline immediately.
       </div>
+
+      {showCrisisBanner && (
+        <div style={{
+          margin: '0 auto 16px', maxWidth: 640, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+          padding: '12px 18px', borderRadius: 14, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.35)', color: '#fca5a5', fontSize: '0.85rem',
+        }}>
+          <span>Things have sounded really hard lately. Crisis Support resources are here if you need them.</span>
+          <button
+            onClick={() => navigate('/crisis-support')}
+            style={{ padding: '6px 14px', borderRadius: 999, border: 'none', background: '#ef4444', color: 'white', fontWeight: 700, cursor: 'pointer' }}
+          >
+            View resources
+          </button>
+          <button
+            onClick={() => setShowCrisisBanner(false)}
+            style={{ background: 'none', border: 'none', color: 'rgba(252,165,165,0.6)', cursor: 'pointer', marginLeft: 'auto' }}
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* Messages */}
       <div className="chat-messages">

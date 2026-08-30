@@ -1,4 +1,5 @@
 import VillaLayout from '../components/VillaLayout'
+import BreathingPacer from '../components/BreathingPacer'
 
 export default function RelaxationVilla() {
   return (
@@ -13,8 +14,9 @@ export default function RelaxationVilla() {
         {
           icon: '🫁',
           title: 'Abdominal Breathing and Muscle Relaxation',
-          text: 'A guided escape using deep abdominal breathing and progressive muscle relaxation to melt away tension from head to toe.',
-          videoUrl: 'https://www.youtube.com/embed/xtklDYGoO0M?rel=0&modestbranding=1'
+          text: 'A guided escape using deep abdominal breathing and progressive muscle relaxation to melt away tension from head to toe. The 4-7-8 pacer below is a gentle way to begin.',
+          videoUrl: 'https://www.youtube.com/embed/xtklDYGoO0M?rel=0&modestbranding=1',
+          component: <BreathingPacer pattern="478" />
         },
         {
           icon: '🎈',

@@ -23,42 +23,6 @@ body {
   overflow: hidden;
 }
 
-.wave {
-  position: absolute;
-  width: 200%;
-  height: 200%;
-  border-radius: 43%;
-  opacity: 0.15;
-  animation: wave-spin linear infinite;
-}
-
-.wave1 {
-  background: white;
-  top: -60%;
-  left: -50%;
-  animation-duration: 12s;
-}
-
-.wave2 {
-  background: #ade8f4;
-  top: -55%;
-  left: -50%;
-  animation-duration: 17s;
-  animation-direction: reverse;
-}
-
-.wave3 {
-  background: #caf0f8;
-  top: -65%;
-  left: -50%;
-  animation-duration: 22s;
-}
-
-@keyframes wave-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
 /* Island wrapper */
 .island-wrapper {
   position: relative;

@@ -12,7 +12,7 @@ export default function AuthHud() {
       {isAuthenticated ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 999, background: 'rgba(17,24,39,0.72)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(14px)', color: 'white' }}>
           <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)' }}>{user?.displayName || 'Traveller'}</span>
-          <button onClick={() => navigate('/login')} style={{ border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.06)', color: 'white', borderRadius: 999, padding: '6px 12px', cursor: 'pointer' }}>
+          <button onClick={() => navigate('/settings')} style={{ border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.06)', color: 'white', borderRadius: 999, padding: '6px 12px', cursor: 'pointer' }}>
             Account
           </button>
           <button onClick={logout} style={{ border: 'none', background: 'linear-gradient(135deg, #f59e0b, #f97316)', color: '#1f2937', borderRadius: 999, padding: '6px 12px', cursor: 'pointer', fontWeight: 700 }}>

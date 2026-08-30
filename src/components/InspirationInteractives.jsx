@@ -147,6 +147,20 @@ const STORIES = [
     quote: "Everyone expected me to have it together because I was older. I still needed help figuring out how to cope.",
     story: "Selin returned to university for postgraduate study while balancing work, commuting, and a dissertation that felt endless. She looked fine on the outside but was constantly depleted and increasingly detached from her course. A supervisor encouraged her to break the project into smaller weekly goals and use the university's wellbeing service. She learned that needing support did not make her less capable; it made the work sustainable.",
   },
+  {
+    name: 'Ravi, 24',
+    tag: 'Grief & Loss',
+    color: '#0ea5e9',
+    quote: "Everyone kept telling me it would get easier with time. What actually helped was letting it be hard, instead of pretending I was fine.",
+    story: "Ravi lost his father in his second year and went straight back to lectures a week later, worried about falling behind. For months he functioned by not feeling much of anything, until a small, unrelated setback made him cry for hours and he realised he had never actually grieved. A bereavement counsellor helped him understand that grief does not follow a timetable, and that returning to normal life quickly is not the same as being okay. He started letting himself mark the hard dates — his father's birthday, the anniversary — instead of pushing through them, and slowly the grief became something he carried rather than something that ambushed him.",
+  },
+  {
+    name: 'Elena, 26',
+    tag: 'Chronic Illness & Isolation',
+    color: '#a855f7',
+    quote: "I used to measure my worth by what I could push through. Learning to rest without guilt was harder than the diagnosis itself.",
+    story: "Elena was diagnosed with a chronic autoimmune condition in her mid-twenties, right as her career was picking up pace. Flare-ups meant cancelled plans and days she could barely leave bed, and she started declining invitations before people could see her at her worst. The isolation crept in quietly — fewer messages, fewer check-ins, a growing sense that she had to manage this entirely on her own. Joining an online support group for people with chronic illness was the turning point: hearing others describe the exact same guilt and grief gave her language for what she was feeling. She still has hard weeks, but she no longer disappears during them.",
+  },
 ]
 
 export function StoriesOfHope() {

@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { MaiaAvatarSvg } from './MaiaAvatar'
 import { loadUserProfile } from '../lib/userProfile'
+import CheckInReminder from './CheckInReminder'
 
 const villas = [
   {
@@ -216,25 +217,46 @@ function LilyPad({ x, y, scale = 1 }) {
   )
 }
 
-function Sparkle({ x, y, delay = 0 }) {
+const SPARKLE_STAR = 'M0,-1 C0.15,-0.25 0.25,-0.15 1,0 C0.25,0.15 0.15,0.25 0,1 C-0.15,0.25 -0.25,0.15 -1,0 C-0.25,-0.15 -0.15,-0.25 0,-1 Z'
+
+function Sparkle({ x, y, delay = 0, color = '#ffffff', size = 0.55, drift = 3 }) {
   return (
-    <g transform={`translate(${x},${y})`}>
-      <circle r="0.4" fill="white" opacity="0.6">
-        <animate attributeName="opacity" values="0;0.8;0" dur="3s" begin={`${delay}s`} repeatCount="indefinite" />
-        <animate attributeName="r" values="0.2;0.5;0.2" dur="3s" begin={`${delay}s`} repeatCount="indefinite" />
-      </circle>
+    <g transform={`translate(${x},${y}) scale(${size})`}>
+      <animateMotion
+        dur={`${6 + delay}s`}
+        begin={`${delay}s`}
+        repeatCount="indefinite"
+        path={`M0,0 Q${drift},${-drift * 1.4} 0,${-drift * 2.4} Q${-drift},${-drift * 1.4} 0,0`}
+      />
+      <path d={SPARKLE_STAR} fill={color} opacity="0">
+        <animate attributeName="opacity" values="0;0.95;0" dur="3.2s" begin={`${delay}s`} repeatCount="indefinite" />
+        <animateTransform attributeName="transform" type="rotate" from="0" to="180" dur="6s" begin={`${delay}s`} repeatCount="indefinite" />
+      </path>
     </g>
   )
 }
 
-function Bird({ x, y, delay = 0, pathD, duration = 20 }) {
+function Bird({ x, y, delay = 0, pathD, duration = 20, depth = 1 }) {
+  const span = 3 * depth
+  const wingUp = `M0,0 Q${(span / 2).toFixed(2)},${(-2.2 * depth).toFixed(2)} ${span.toFixed(2)},0`
+  const wingDown = `M0,0 Q${(span / 2).toFixed(2)},${(0.35 * depth).toFixed(2)} ${span.toFixed(2)},0`
+  const flapDur = (0.36 + (delay % 1) * 0.14).toFixed(2)
+
   return (
     <g>
-      <path d="M0,0 Q1.5,-1 3,0" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="0.4">
+      <path
+        d={wingUp}
+        fill="none"
+        stroke={`rgba(255,255,255,${(0.32 + 0.35 * depth).toFixed(2)})`}
+        strokeWidth={(0.14 + 0.26 * depth).toFixed(2)}
+        strokeLinecap="round"
+      >
+        <animate attributeName="d" values={`${wingUp};${wingDown};${wingUp}`} dur={`${flapDur}s`} begin={`${delay}s`} repeatCount="indefinite" />
         <animateMotion
           dur={`${duration}s`}
           begin={`${delay}s`}
           repeatCount="indefinite"
+          rotate="auto"
           path={pathD || `M${x},${y} Q${x + 20},${y - 10} ${x + 40},${y - 5} Q${x + 60},${y - 15} ${x + 100},${y - 8}`}
         />
       </path>
@@ -421,6 +443,56 @@ function WelcomeAvatar({ onNavigate, profile }) {
   )
 }
 
+const OCEAN_WIDTH = 100
+
+function buildWaveLine(baseY, amplitude, period, width) {
+  let d = `M${-period},${baseY}`
+  let x = -period
+  let crestUp = true
+  while (x < width + period) {
+    const midX = x + period / 2
+    const sign = crestUp ? -1 : 1
+    d += ` Q${midX.toFixed(2)},${(baseY + sign * amplitude).toFixed(2)} ${(x + period).toFixed(2)},${baseY}`
+    x += period
+    crestUp = !crestUp
+  }
+  return d
+}
+
+const WAVE_BANDS = [
+  { baseY: 10, amp: 3,   period: 34, color: '#a7f3d0', opacity: 0.10, dur: 30, dir: 1 },
+  { baseY: 32, amp: 3.5, period: 26, color: '#ffffff', opacity: 0.07, dur: 22, dir: -1 },
+  { baseY: 56, amp: 4,   period: 22, color: '#caf0f8', opacity: 0.13, dur: 26, dir: 1 },
+  { baseY: 80, amp: 5,   period: 18, color: '#ffffff', opacity: 0.18, dur: 17, dir: -1 },
+].map(band => ({ ...band, line: buildWaveLine(band.baseY, band.amp, band.period, OCEAN_WIDTH) }))
+
+function OceanWaves() {
+  return (
+    <svg
+      viewBox={`0 0 ${OCEAN_WIDTH} 100`}
+      preserveAspectRatio="none"
+      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+    >
+      {WAVE_BANDS.map((band, i) => {
+        const isFront = i === WAVE_BANDS.length - 1
+        const fillPath = `${band.line} L${OCEAN_WIDTH + band.period},100 L${-band.period},100 Z`
+        return (
+          <g key={band.baseY}>
+            <path d={fillPath} fill={band.color} opacity={band.opacity}>
+              <animateTransform attributeName="transform" type="translate" from="0 0" to={`${band.dir * band.period} 0`} dur={`${band.dur}s`} repeatCount="indefinite" />
+            </path>
+            {isFront && (
+              <path d={band.line} fill="none" stroke="#ffffff" strokeWidth="0.6" opacity="0.32">
+                <animateTransform attributeName="transform" type="translate" from="0 0" to={`${band.dir * band.period} 0`} dur={`${band.dur}s`} repeatCount="indefinite" />
+              </path>
+            )}
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
 export default function IslandMap() {
   const navigate = useNavigate()
   const [hovered, setHovered] = useState(null)
@@ -430,13 +502,10 @@ export default function IslandMap() {
     <div className="island-wrapper">
 
       <div className="ocean">
-        <div className="wave wave1" />
-        <div className="wave wave2" />
-        <div className="wave wave3" />
-        <div className="foam foam1" />
-        <div className="foam foam2" />
-        <div className="foam foam3" />
+        <OceanWaves />
       </div>
+
+      <CheckInReminder />
 
       <div className="island-title">
         <h1>Recovery Island</h1>
@@ -488,38 +557,38 @@ export default function IslandMap() {
           </ellipse>
 
           {/* ── Water sparkles ── */}
-          <Sparkle x={8}  y={20} delay={0}   />
-          <Sparkle x={92} y={18} delay={1.2} />
-          <Sparkle x={5}  y={55} delay={0.7} />
-          <Sparkle x={95} y={60} delay={2}   />
-          <Sparkle x={20} y={88} delay={1.5} />
-          <Sparkle x={80} y={90} delay={0.3} />
-          <Sparkle x={50} y={95} delay={2.5} />
-          <Sparkle x={12} y={40} delay={3}   />
-          <Sparkle x={88} y={42} delay={1.8} />
+          <Sparkle x={8}  y={20} delay={0}   color="#ffffff" size={0.6}  drift={2.5} />
+          <Sparkle x={92} y={18} delay={1.2} color="#7dd3fc" size={0.45} drift={3.5} />
+          <Sparkle x={5}  y={55} delay={0.7} color="#ffd166" size={0.5}  drift={2}   />
+          <Sparkle x={95} y={60} delay={2}   color="#ffffff" size={0.55} drift={3}   />
+          <Sparkle x={20} y={88} delay={1.5} color="#7dd3fc" size={0.4}  drift={2.2} />
+          <Sparkle x={80} y={90} delay={0.3} color="#ffd166" size={0.5}  drift={3}   />
+          <Sparkle x={50} y={95} delay={2.5} color="#ffffff" size={0.35} drift={2.6} />
+          <Sparkle x={12} y={40} delay={3}   color="#ffd166" size={0.45} drift={2.8} />
+          <Sparkle x={88} y={42} delay={1.8} color="#7dd3fc" size={0.5}  drift={2.4} />
 
           {/* ── Birds – expanded flock ── */}
           {/* Left to right */}
-          <Bird delay={0}  duration={22} pathD="M0,8  Q25,-2  50,5  Q75,-5  105,3"  />
-          <Bird delay={3}  duration={25} pathD="M0,11 Q20,3   45,8  Q70,0   105,6"  />
-          <Bird delay={8}  duration={20} pathD="M0,15 Q30,5   55,12 Q80,2   105,10" />
-          <Bird delay={13} duration={28} pathD="M0,6  Q22,-4  48,2  Q74,-8  105,0"  />
-          <Bird delay={6}  duration={24} pathD="M0,20 Q28,10  52,17 Q76,7   105,14" />
-          <Bird delay={18} duration={21} pathD="M0,13 Q25,4   50,10 Q78,-2  105,7"  />
+          <Bird delay={0}  duration={22} depth={1.1} pathD="M0,8  Q25,-2  50,5  Q75,-5  105,3"  />
+          <Bird delay={3}  duration={25} depth={0.7} pathD="M0,11 Q20,3   45,8  Q70,0   105,6"  />
+          <Bird delay={8}  duration={20} depth={1.3} pathD="M0,15 Q30,5   55,12 Q80,2   105,10" />
+          <Bird delay={13} duration={28} depth={0.6} pathD="M0,6  Q22,-4  48,2  Q74,-8  105,0"  />
+          <Bird delay={6}  duration={24} depth={1}   pathD="M0,20 Q28,10  52,17 Q76,7   105,14" />
+          <Bird delay={18} duration={21} depth={0.8} pathD="M0,13 Q25,4   50,10 Q78,-2  105,7"  />
           {/* Right to left */}
-          <Bird delay={2}  duration={26} pathD="M105,9  Q80,0  55,6  Q30,-4  -5,2"  />
-          <Bird delay={10} duration={23} pathD="M105,14 Q78,5  53,11 Q28,1   -5,7"  />
-          <Bird delay={16} duration={30} pathD="M105,18 Q82,8  57,15 Q32,5   -5,11" />
-          <Bird delay={5}  duration={27} pathD="M105,7  Q83,-3 58,4  Q33,-6  -5,1"  />
+          <Bird delay={2}  duration={26} depth={0.9} pathD="M105,9  Q80,0  55,6  Q30,-4  -5,2"  />
+          <Bird delay={10} duration={23} depth={1.2} pathD="M105,14 Q78,5  53,11 Q28,1   -5,7"  />
+          <Bird delay={16} duration={30} depth={0.5} pathD="M105,18 Q82,8  57,15 Q32,5   -5,11" />
+          <Bird delay={5}  duration={27} depth={1}   pathD="M105,7  Q83,-3 58,4  Q33,-6  -5,1"  />
           {/* Extra birds – varied altitudes & timings */}
-          <Bird delay={1}  duration={18} pathD="M0,25  Q25,15  50,22  Q75,12  105,18" />
-          <Bird delay={7}  duration={23} pathD="M0,32  Q22,22  47,29  Q72,19  105,25" />
-          <Bird delay={12} duration={16} pathD="M105,28 Q85,18  60,25  Q35,15  -5,21" />
-          <Bird delay={4}  duration={19} pathD="M0,3   Q30,-5  55,1   Q80,-8  105,-4"  />
-          <Bird delay={9}  duration={24} pathD="M105,30 Q80,20  55,27  Q30,17  -5,23" />
-          <Bird delay={20} duration={22} pathD="M0,16  Q28,7   52,14  Q78,4   105,10"  />
-          <Bird delay={11} duration={26} pathD="M0,22  Q25,13  50,20  Q76,10  105,16"  />
-          <Bird delay={17} duration={20} pathD="M105,5  Q82,-4  57,3   Q32,-6  -5,0"   />
+          <Bird delay={1}  duration={18} depth={0.7} pathD="M0,25  Q25,15  50,22  Q75,12  105,18" />
+          <Bird delay={7}  duration={23} depth={1.15} pathD="M0,32  Q22,22  47,29  Q72,19  105,25" />
+          <Bird delay={12} duration={16} depth={0.55} pathD="M105,28 Q85,18  60,25  Q35,15  -5,21" />
+          <Bird delay={4}  duration={19} depth={1}   pathD="M0,3   Q30,-5  55,1   Q80,-8  105,-4"  />
+          <Bird delay={9}  duration={24} depth={0.8} pathD="M105,30 Q80,20  55,27  Q30,17  -5,23" />
+          <Bird delay={20} duration={22} depth={1.25} pathD="M0,16  Q28,7   52,14  Q78,4   105,10"  />
+          <Bird delay={11} duration={26} depth={0.65} pathD="M0,22  Q25,13  50,20  Q76,10  105,16"  />
+          <Bird delay={17} duration={20} depth={1}   pathD="M105,5  Q82,-4  57,3   Q32,-6  -5,0"   />
 
           {/* ── Ocean wave arcs ── */}
           {/* Left zone */}

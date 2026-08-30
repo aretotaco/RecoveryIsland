@@ -74,6 +74,16 @@ export async function upsertVillaEntry({ userId, category, source, entryDate, en
   return data
 }
 
+export async function deleteAllVillaEntries(userId) {
+  const client = requireSupabase()
+  const { error } = await client
+    .from('villa_entries')
+    .delete()
+    .eq('user_id', userId)
+
+  if (error) throw error
+}
+
 export async function fetchVillaEntries({ userId, category, source, limit = 100 } = {}) {
   const client = requireSupabase()
   let query = client

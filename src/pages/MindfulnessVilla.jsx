@@ -1,4 +1,5 @@
 import VillaLayout from '../components/VillaLayout'
+import BreathingPacer from '../components/BreathingPacer'
 
 export default function MindfulnessVilla() {
   return (
@@ -13,8 +14,9 @@ export default function MindfulnessVilla() {
         {
           icon: '🌬️',
           title: 'Mindful Breathing',
-          text: 'Guided breathing techniques from box breathing to 4-7-8 breathing. Calm your nervous system in minutes with science-backed methods.',
-          videoUrl: 'https://www.youtube.com/embed/VTA2na5-B58?rel=0&modestbranding=1'
+          text: 'Guided breathing techniques from box breathing to 4-7-8 breathing. Calm your nervous system in minutes with science-backed methods. Try the pacer below whenever you need a reset.',
+          videoUrl: 'https://www.youtube.com/embed/VTA2na5-B58?rel=0&modestbranding=1',
+          component: <BreathingPacer pattern="box" />
         },
         {
           icon: '🧠',

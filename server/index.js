@@ -4,6 +4,7 @@ import dotenv from 'dotenv'
 import { existsSync } from 'fs'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
+import { createClient } from '@supabase/supabase-js'
 
 dotenv.config()
 
@@ -48,6 +49,36 @@ app.post('/api/chat', async (req, res) => {
   } catch (error) {
     return res.status(500).json({ reply: 'Something went wrong. Please try again.' })
   }
+})
+
+app.delete('/api/account', async (req, res) => {
+  const authHeader = req.headers.authorization || ''
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null
+
+  if (!token) {
+    return res.status(401).json({ message: 'Missing auth token' })
+  }
+
+  const supabaseUrl = process.env.VITE_SUPABASE_URL
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    return res.status(500).json({ message: 'Account deletion is not configured yet. Add SUPABASE_SERVICE_ROLE_KEY to your server .env file.' })
+  }
+
+  const admin = createClient(supabaseUrl, serviceRoleKey)
+
+  const { data: userData, error: userError } = await admin.auth.getUser(token)
+  if (userError || !userData?.user) {
+    return res.status(401).json({ message: 'Invalid or expired session' })
+  }
+
+  const { error: deleteError } = await admin.auth.admin.deleteUser(userData.user.id)
+  if (deleteError) {
+    return res.status(500).json({ message: deleteError.message || 'Unable to delete account' })
+  }
+
+  return res.status(200).json({ ok: true })
 })
 
 if (existsSync(distPath)) {

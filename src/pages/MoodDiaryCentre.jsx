@@ -762,6 +762,20 @@ export default function MoodDiaryCentre() {
           </div>
         </div>
 
+        {/* ── Insights ── */}
+        <div className="mdc-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+          <div className="mdc-card-header" style={{ marginBottom: 0 }}>
+            <span className="mdc-card-icon">🔎</span>
+            <div>
+              <h3 className="mdc-card-title">See the patterns behind your data</h3>
+              <p className="mdc-card-sub">Mood, sleep, movement, and assessments, connected in one view.</p>
+            </div>
+          </div>
+          <button className="mdc-assess-btn" style={{ flexShrink: 0 }} onClick={() => navigate('/insights')}>
+            View My Insights →
+          </button>
+        </div>
+
       </div>
 
       <MaiaGuide villaId={2} />
