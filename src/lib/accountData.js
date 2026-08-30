@@ -22,7 +22,7 @@ export async function exportUserData() {
 
   const payload = {
     exportedAt: new Date().toISOString(),
-    account: { id: data.user.id, email: data.user.email },
+    account: { id: data.user.id, studyId: profile?.study_id || '' },
     profile,
     entries,
   }

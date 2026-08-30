@@ -12,6 +12,7 @@ import AuthPage from './pages/AuthPage'
 import CrisisSupport from './pages/CrisisSupport'
 import SettingsPage from './pages/SettingsPage'
 import InsightsDashboard from './pages/InsightsDashboard'
+import AdminExport from './pages/AdminExport'
 import AuthHud from './components/AuthHud'
 import CrisisHud from './components/CrisisHud'
 import { AuthProvider, useAuth } from './context/AuthContext'
@@ -53,6 +54,7 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<AuthOnlyRoute><AuthPage /></AuthOnlyRoute>} />
           <Route path="/crisis-support" element={<CrisisSupport />} />
+          <Route path="/admin-export" element={<AdminExport />} />
           <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/concierge" element={<ProtectedRoute><ConciergeVilla /></ProtectedRoute>} />
           <Route path="/mood-diary" element={<ProtectedRoute><MoodDiaryCentre /></ProtectedRoute>} />

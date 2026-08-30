@@ -3,64 +3,18 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import MaiaGuide from '../components/MaiaGuide'
 import { fetchEntries, syncEntry } from '../lib/villaSync'
+import { SCALES } from '../lib/assessments'
 
-const ASSESS_CARDS = [
-  {
-    id: 'pss',
-    shortName: 'PSS-10',
-    name: 'Perceived Stress Scale',
-    icon: '🌊',
-    color: '#8b5cf6',
-    desc: 'Measures perceived stress over the past month.',
-    maxScore: 40,
-    getSeverity: s =>
-      s < 14  ? { label: 'Low',      color: '#10b981' } :
-      s <= 26 ? { label: 'Moderate', color: '#f59e0b' } :
-                { label: 'High',     color: '#ef4444' },
-  },
-  {
-    id: 'phq',
-    shortName: 'PHQ-9',
-    name: 'Patient Health Questionnaire',
-    icon: '💭',
-    color: '#6366f1',
-    desc: 'Screens for depression over the past two weeks.',
-    maxScore: 27,
-    getSeverity: s =>
-      s <= 4  ? { label: 'None',           color: '#10b981' } :
-      s <= 9  ? { label: 'Mild',           color: '#84cc16' } :
-      s <= 14 ? { label: 'Moderate',       color: '#f59e0b' } :
-      s <= 19 ? { label: 'Mod. Severe',    color: '#f97316' } :
-                { label: 'Severe',         color: '#ef4444' },
-  },
-  {
-    id: 'gad',
-    shortName: 'GAD-7',
-    name: 'General Anxiety Disorder',
-    icon: '🫀',
-    color: '#06b6d4',
-    desc: 'Screens for generalised anxiety over the past two weeks.',
-    maxScore: 21,
-    getSeverity: s =>
-      s <= 4  ? { label: 'None-Minimal', color: '#10b981' } :
-      s <= 9  ? { label: 'Mild',         color: '#84cc16' } :
-      s <= 14 ? { label: 'Moderate',     color: '#f59e0b' } :
-                { label: 'Severe',       color: '#ef4444' },
-  },
-  {
-    id: 'cdrisc',
-    shortName: 'CD-RISC 5',
-    name: 'Resilience Scale',
-    icon: '🌱',
-    color: '#10b981',
-    desc: 'Measures your resilience and ability to adapt to challenges.',
-    maxScore: 20,
-    getSeverity: s =>
-      s >= 14 ? { label: 'High',     color: '#10b981' } :
-      s >= 7  ? { label: 'Moderate', color: '#f59e0b' } :
-                { label: 'Low',      color: '#ef4444' },
-  },
-]
+const ASSESS_CARDS = SCALES.map(s => ({
+  id: s.id,
+  shortName: s.shortName,
+  name: s.id === 'cdrisc' ? 'Resilience Scale' : s.name,
+  icon: s.icon,
+  color: s.color,
+  desc: s.desc,
+  maxScore: s.maxScore,
+  getSeverity: s.getSeverity,
+}))
 
 const MOODS = [
   { value: 5, emoji: '😄', label: 'Great',      color: '#10b981' },

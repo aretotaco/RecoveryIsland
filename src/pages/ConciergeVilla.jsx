@@ -22,39 +22,27 @@ export default function ConciergeVilla() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const saved = loadConcierge()
-  const defaultName = saved?.name || user?.displayName || 'Traveller'
   const [phase,     setPhase]     = useState(saved ? 'main' : 'welcome')
   const [wizStep,   setWizStep]   = useState(0)
   const [avatarCfg, setAvatarCfg] = useState(() => saved?.avatarConfig || user?.avatarConfig || loadMaiaAvatar())
-  const [nameInput, setNameInput] = useState(defaultName)
-  const [name,      setName]      = useState(defaultName)
   const [visited,   setVisited]   = useState(saved?.visited || [])
   const [editing,   setEditing]   = useState(false)
 
   useEffect(() => {
-    if (phase === 'main') saveConcierge({ name, visited, avatarConfig: avatarCfg })
-  }, [avatarCfg, phase, name, visited])
-
-  useEffect(() => {
-    if (!saved && user?.displayName) {
-      setName(prev => prev || user.displayName)
-      setNameInput(prev => prev || user.displayName)
-    }
-  }, [saved, user])
+    if (phase === 'main') saveConcierge({ visited, avatarConfig: avatarCfg })
+  }, [avatarCfg, phase, visited])
 
   function finishWizard() {
-    const n = nameInput.trim() || 'Traveller'
     saveMaiaAvatar(avatarCfg)
-    setName(n)
     setPhase('main')
     setEditing(false)
-    saveConcierge({ name: n, visited, avatarConfig: avatarCfg })
-    syncProfile({ displayName: n, avatarConfig: avatarCfg })
+    saveConcierge({ visited, avatarConfig: avatarCfg })
+    syncProfile({ avatarConfig: avatarCfg })
     syncEntry({
       category: 'concierge',
       source: 'concierge-villa',
       entryKey: 'profile',
-      payload: { displayName: n, visited, avatarConfig: avatarCfg },
+      payload: { visited, avatarConfig: avatarCfg },
     })
   }
 
@@ -62,12 +50,12 @@ export default function ConciergeVilla() {
     if (!visited.includes(path)) {
       const next = [...visited, path]
       setVisited(next)
-      saveConcierge({ name, visited: next, avatarConfig: avatarCfg })
+      saveConcierge({ visited: next, avatarConfig: avatarCfg })
       syncEntry({
         category: 'concierge',
         source: 'island-map',
         entryKey: 'visited',
-        payload: { displayName: name || 'Traveller', visited: next, path },
+        payload: { visited: next, path },
       })
     }
     navigate(path)
@@ -117,37 +105,7 @@ export default function ConciergeVilla() {
               <MaiaAvatarBuilder config={avatarCfg} onChange={cfg => { setAvatarCfg(cfg); saveMaiaAvatar(cfg) }} />
               <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'center' }}>
                 <button className="card-btn" style={{ background: 'rgba(255,255,255,0.12)', fontSize: '0.9rem' }} onClick={() => setWizStep(0)}>Back</button>
-                <button className="card-btn" style={{ fontSize: '0.9rem', padding: '11px 28px' }} onClick={() => setWizStep(2)}>Next</button>
-              </div>
-            </div>
-          )}
-
-          {wizStep === 2 && (
-            <div className="villa-card" style={{ maxWidth: 440, textAlign: 'center' }}>
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
-                <MaiaAvatarSvg config={avatarCfg} width={110} height={138} animated={false} />
-              </div>
-              <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.5rem', color: 'white', marginBottom: 6 }}>What is your name?</h2>
-              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', marginBottom: 20 }}>
-                Maia will greet you personally. We prefill your account name, and you can change it any time here.
-              </p>
-              <input
-                type="text"
-                placeholder="Your name..."
-                value={nameInput}
-                maxLength={20}
-                onChange={e => setNameInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && finishWizard()}
-                style={{
-                  width: '100%', padding: '12px 16px', borderRadius: 12,
-                  border: '1.5px solid rgba(255,255,255,0.2)',
-                  background: 'rgba(255,255,255,0.08)', color: 'white', fontSize: '1rem',
-                  outline: 'none', boxSizing: 'border-box', marginBottom: 20,
-                }}
-              />
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-                <button className="card-btn" style={{ background: 'rgba(255,255,255,0.12)', fontSize: '0.9rem' }} onClick={() => setWizStep(1)}>Back</button>
-                <button className="card-btn" style={{ padding: '12px 28px', fontSize: '0.95rem' }} onClick={finishWizard}>
+                <button className="card-btn" style={{ fontSize: '0.9rem', padding: '11px 28px' }} onClick={finishWizard}>
                   Enter the Island
                 </button>
               </div>
@@ -172,7 +130,7 @@ export default function ConciergeVilla() {
           <MaiaAvatarSvg config={avatarCfg} width={110} height={138} />
         </div>
         <div className="villa-tag">Concierge Villa</div>
-        <h1 className="villa-title">Welcome back, {name}</h1>
+        <h1 className="villa-title">Welcome back</h1>
         <p className="villa-subtitle">Your guide to Recovery Island. Explore at your own pace.</p>
         <button
           onClick={() => { setWizStep(1); setEditing(true) }}

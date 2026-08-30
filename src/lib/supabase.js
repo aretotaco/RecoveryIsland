@@ -26,7 +26,7 @@ export async function fetchProfile(userId) {
   const client = requireSupabase()
   const { data, error } = await client
     .from('profiles')
-    .select('id, email, display_name, avatar_config')
+    .select('id, email, display_name, avatar_config, study_id')
     .eq('id', userId)
     .maybeSingle()
 
@@ -34,7 +34,7 @@ export async function fetchProfile(userId) {
   return data
 }
 
-export async function upsertProfile({ id, email, displayName, avatarConfig }) {
+export async function upsertProfile({ id, email, displayName, avatarConfig, studyId }) {
   const client = requireSupabase()
   const payload = {
     id,
@@ -43,11 +43,14 @@ export async function upsertProfile({ id, email, displayName, avatarConfig }) {
     avatar_config: avatarConfig || {},
     updated_at: new Date().toISOString(),
   }
+  // Only include study_id when explicitly provided (profile creation) so
+  // routine updates (display name, avatar) never risk clobbering it.
+  if (studyId) payload.study_id = studyId
 
   const { data, error } = await client
     .from('profiles')
     .upsert(payload, { onConflict: 'id' })
-    .select('id, email, display_name, avatar_config')
+    .select('id, email, display_name, avatar_config, study_id')
     .single()
 
   if (error) throw error

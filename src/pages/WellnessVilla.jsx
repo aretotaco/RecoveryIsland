@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import VillaLayout from '../components/VillaLayout'
-import { syncEntry } from '../lib/villaSync'
+import { fetchEntries, syncEntry } from '../lib/villaSync'
+import { useAuth } from '../context/AuthContext'
 
 const ROUTINE_ITEMS = {
   morning: [
@@ -71,6 +72,7 @@ const SELECT_STYLE = {
 const SELECT_OPTION_STYLE = { color: '#111827', background: '#ffffff' }
 
 function MovementTracker() {
+  const { isAuthenticated } = useAuth()
   const key = `ri_movement_${todayKey()}`
   const [state, setState] = useState(() => {
     const stored = readLS(key, null)
@@ -80,6 +82,23 @@ function MovementTracker() {
   const [customLabel, setCustomLabel] = useState('')
   const [customMinutes, setCustomMinutes] = useState(20)
   const [customIntensity, setCustomIntensity] = useState('moderate')
+
+  useEffect(() => {
+    if (!isAuthenticated) return undefined
+    let active = true
+    // Every write for today stores the full combined { preset, custom } state,
+    // so the freshest (first, since rows are ordered by updated_at desc)
+    // matching row for today is the complete remote state.
+    fetchEntries({ category: 'wellness', source: 'movement-tracker', limit: 30 }).then(rows => {
+      if (!active) return
+      const todaysRow = rows.find(r => r.entry_date === todayKey())
+      if (todaysRow?.payload) {
+        setState(todaysRow.payload)
+        try { localStorage.setItem(key, JSON.stringify(todaysRow.payload)) } catch { /* ignore */ }
+      }
+    })
+    return () => { active = false }
+  }, [isAuthenticated, key])
 
   function persist(next) {
     setState(next)
@@ -178,12 +197,40 @@ function MovementTracker() {
 }
 
 function NourishmentGuide() {
+  const { isAuthenticated } = useAuth()
   const [selected, setSelected] = useState(null)
   const [mealText, setMealText] = useState('')
   const [mealMoment, setMealMoment] = useState('breakfast')
   const [reflection, setReflection] = useState('')
   const [mealLogs, setMealLogs] = useState(() => readLS(`ri_meals_${todayKey()}`, []))
   const tip = selected !== null ? MEAL_MOOD_TIPS[selected] : null
+
+  useEffect(() => {
+    if (!isAuthenticated) return undefined
+    let active = true
+    fetchEntries({ category: 'wellness', source: 'nourishment-guide', limit: 30 }).then(rows => {
+      if (!active) return
+      const todaysMeals = rows
+        .filter(r => r.entry_date === todayKey())
+        .map(r => ({
+          id: r.payload?.id || r.id,
+          ts: r.payload?.ts || new Date(r.updated_at).getTime(),
+          text: r.payload?.text,
+          moment: r.payload?.moment,
+          mood: r.payload?.mood,
+          reflection: r.payload?.reflection,
+        }))
+        .filter(entry => entry.text)
+        .sort((a, b) => b.ts - a.ts)
+        .slice(0, 6)
+
+      if (todaysMeals.length > 0) {
+        setMealLogs(todaysMeals)
+        try { localStorage.setItem(`ri_meals_${todayKey()}`, JSON.stringify(todaysMeals)) } catch { /* ignore */ }
+      }
+    })
+    return () => { active = false }
+  }, [isAuthenticated])
 
   function saveMeal() {
     if (!mealText.trim()) return
@@ -202,7 +249,7 @@ function NourishmentGuide() {
       category: 'wellness',
       source: 'nourishment-guide',
       entryKey: `${todayKey()}-${entry.id}`,
-      payload: { text: entry.text, moment: entry.moment, mood: entry.mood, reflection: entry.reflection },
+      payload: { id: entry.id, ts: entry.ts, text: entry.text, moment: entry.moment, mood: entry.mood, reflection: entry.reflection },
     })
     setMealText('')
     setMealMoment('breakfast')
@@ -333,11 +380,29 @@ function RoutineBuilder() {
 }
 
 function SleepTracker() {
+  const { isAuthenticated } = useAuth()
   const key = `ri_sleep_${todayKey()}`
   const [entry, setEntry] = useState(() => readLS(key, null))
   const [hours, setHours] = useState(entry?.hours ?? 7)
   const [quality, setQuality] = useState(entry?.quality ?? null)
   const [saved, setSaved] = useState(!!entry)
+
+  useEffect(() => {
+    if (!isAuthenticated) return undefined
+    let active = true
+    fetchEntries({ category: 'wellness', source: 'sleep-tracker', limit: 14 }).then(rows => {
+      if (!active) return
+      const todaysRow = rows.find(r => r.entry_date === todayKey())
+      if (todaysRow?.payload) {
+        setEntry(todaysRow.payload)
+        setHours(todaysRow.payload.hours ?? 7)
+        setQuality(todaysRow.payload.quality ?? null)
+        setSaved(true)
+        try { localStorage.setItem(key, JSON.stringify(todaysRow.payload)) } catch { /* ignore */ }
+      }
+    })
+    return () => { active = false }
+  }, [isAuthenticated, key])
 
   function save() {
     if (!quality) return

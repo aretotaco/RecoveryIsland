@@ -9,12 +9,8 @@ export default function SettingsPage() {
   const navigate = useNavigate()
   const { user, updateProfile, logout } = useAuth()
 
-  const [nameInput, setNameInput] = useState(user?.displayName || 'Traveller')
   const [avatarCfg, setAvatarCfg] = useState(user?.avatarConfig || {})
   const [profileStatus, setProfileStatus] = useState('')
-
-  const [emailInput, setEmailInput] = useState(user?.email || '')
-  const [emailStatus, setEmailStatus] = useState('')
 
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
@@ -28,22 +24,10 @@ export default function SettingsPage() {
     setProfileStatus('Saving...')
     try {
       saveMaiaAvatar(avatarCfg)
-      await updateProfile({ displayName: nameInput.trim() || 'Traveller', avatarConfig: avatarCfg })
+      await updateProfile({ avatarConfig: avatarCfg })
       setProfileStatus('Saved.')
     } catch (err) {
       setProfileStatus(err.message || 'Could not save profile')
-    }
-  }
-
-  async function updateEmail() {
-    setEmailStatus('Updating...')
-    try {
-      const client = requireSupabase()
-      const { error } = await client.auth.updateUser({ email: emailInput.trim() })
-      if (error) throw error
-      setEmailStatus('Check your new inbox to confirm the change.')
-    } catch (err) {
-      setEmailStatus(err.message || 'Could not update email')
     }
   }
 
@@ -86,7 +70,6 @@ export default function SettingsPage() {
     try {
       await eraseUserData()
       setDangerStatus('Your data has been erased.')
-      setNameInput('Traveller')
       setAvatarCfg({})
     } catch (err) {
       setDangerStatus(err.message || 'Could not erase data')
@@ -129,44 +112,26 @@ export default function SettingsPage() {
       <div className="villa-content">
         <div className="villa-card" style={{ gridColumn: 'span 2', minWidth: 0 }}>
           <div className="card-icon">🌸</div>
-          <h3 className="card-title">Profile & Maia</h3>
-          <p className="card-text">Update your display name and customise your companion.</p>
+          <h3 className="card-title">Customise Maia</h3>
+          <p className="card-text">Personalise your companion's look. Recovery Island doesn't collect your name or any other identifier — Maia is the only thing you can customise here.</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, alignItems: 'flex-start' }}>
             <div style={{ flex: '0 0 auto', display: 'flex', justifyContent: 'center' }}>
               <MaiaAvatarSvg config={avatarCfg} width={100} height={125} animated={false} />
             </div>
             <div style={{ flex: '1 1 260px', minWidth: 240 }}>
-              <input
-                value={nameInput}
-                maxLength={24}
-                onChange={e => setNameInput(e.target.value)}
-                placeholder="Display name"
-                style={{ width: '100%', padding: '11px 14px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: 'white', marginBottom: 14 }}
-              />
               <MaiaAvatarBuilder config={avatarCfg} onChange={setAvatarCfg} />
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16 }}>
-            <button className="card-btn" onClick={saveProfile}>Save profile</button>
+            <button className="card-btn" onClick={saveProfile}>Save Maia</button>
             {profileStatus && <span style={{ color: 'rgba(255,240,200,0.6)', fontSize: '0.85rem' }}>{profileStatus}</span>}
           </div>
         </div>
 
         <div className="villa-card">
-          <div className="card-icon">✉️</div>
-          <h3 className="card-title">Email</h3>
-          <p className="card-text">Currently signed in as {user?.email}.</p>
-          <input
-            value={emailInput}
-            onChange={e => setEmailInput(e.target.value)}
-            type="email"
-            placeholder="New email"
-            style={{ width: '100%', padding: '11px 14px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: 'white', marginBottom: 12 }}
-          />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <button className="card-btn" onClick={updateEmail}>Update email</button>
-            {emailStatus && <span style={{ color: 'rgba(255,240,200,0.6)', fontSize: '0.82rem' }}>{emailStatus}</span>}
-          </div>
+          <div className="card-icon">🪪</div>
+          <h3 className="card-title">Study ID</h3>
+          <p className="card-text">You're signed in as <strong style={{ color: 'white' }}>{user?.studyId}</strong>. Your Study ID is your fixed login identity and can't be changed here — contact the study administrator if it needs to be corrected.</p>
         </div>
 
         <div className="villa-card">

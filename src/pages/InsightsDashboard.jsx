@@ -1,13 +1,17 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { fetchEntries } from '../lib/villaSync'
+import { SCALES } from '../lib/assessments'
 
-const ASSESS_META = {
-  pss:    { shortName: 'PSS-10',   maxScore: 40, color: '#8b5cf6', getSeverity: s => s < 14 ? 'Low' : s <= 26 ? 'Moderate' : 'High' },
-  phq:    { shortName: 'PHQ-9',    maxScore: 27, color: '#6366f1', getSeverity: s => s <= 4 ? 'None' : s <= 9 ? 'Mild' : s <= 14 ? 'Moderate' : s <= 19 ? 'Mod. Severe' : 'Severe' },
-  gad:    { shortName: 'GAD-7',    maxScore: 21, color: '#06b6d4', getSeverity: s => s <= 4 ? 'None-Minimal' : s <= 9 ? 'Mild' : s <= 14 ? 'Moderate' : 'Severe' },
-  cdrisc: { shortName: 'CD-RISC 5', maxScore: 20, color: '#10b981', getSeverity: s => s >= 14 ? 'High' : s >= 7 ? 'Moderate' : 'Low' },
-}
+const ASSESS_META = SCALES.reduce((acc, s) => {
+  acc[s.id] = {
+    shortName: s.shortName,
+    maxScore: s.maxScore,
+    color: s.color,
+    getSeverity: score => s.getSeverity(score).label,
+  }
+  return acc
+}, {})
 
 function dayKeyFromTs(ts) {
   return new Date(ts).toDateString()
@@ -71,7 +75,18 @@ export default function InsightsDashboard() {
     }
 
     load()
-    return () => { active = false }
+
+    function onFocus() {
+      if (document.visibilityState === 'visible') load()
+    }
+    document.addEventListener('visibilitychange', onFocus)
+    window.addEventListener('focus', onFocus)
+
+    return () => {
+      active = false
+      document.removeEventListener('visibilitychange', onFocus)
+      window.removeEventListener('focus', onFocus)
+    }
   }, [])
 
   const hasAnyData = Object.keys(moodByDay).length > 0

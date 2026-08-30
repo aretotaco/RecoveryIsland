@@ -1,9 +1,16 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { fetchProfile, isSupabaseConfigured, requireSupabase, upsertProfile } from '../lib/supabase'
 import { saveUserProfile } from '../lib/userProfile'
+import { flushPendingSync } from '../lib/villaSync'
 
 const AuthContext = createContext(null)
 const ACTIVE_USER_KEY = 'ri_active_user_id'
+
+// Participants sign in with a Study ID + password, never an email address.
+// Internally we map the Study ID to a synthetic address on a domain that
+// receives no mail, so Supabase Auth (which is email/password based) can be
+// reused without ever collecting or displaying a real email.
+const STUDY_ID_DOMAIN = 'participants.recoveryisland.local'
 
 function clearRecoveryIslandLocalState() {
   try {
@@ -16,46 +23,65 @@ function clearRecoveryIslandLocalState() {
   } catch {}
 }
 
-function normalizeEmail(email) {
-  return String(email || '').trim().toLowerCase()
+function normalizeStudyId(studyId) {
+  return String(studyId || '').trim().toUpperCase()
 }
 
-function normalizeDisplayName(name) {
-  return String(name || '').trim() || 'Traveller'
+function studyIdToEmail(studyId) {
+  const slug = normalizeStudyId(studyId).toLowerCase().replace(/[^a-z0-9._-]/g, '')
+  if (!slug) return ''
+  return `${slug}@${STUDY_ID_DOMAIN}`
+}
+
+function studyIdFromAuthUser(authUser) {
+  if (authUser?.user_metadata?.study_id) return authUser.user_metadata.study_id
+  return String(authUser?.email || '').split('@')[0].toUpperCase()
 }
 
 function formatAuthError(error) {
   const message = String(error?.message || '')
 
   if (message.includes('429') || message.toLowerCase().includes('rate limit')) {
-    return new Error('Too many signup attempts. Supabase is rate-limiting confirmation emails right now. Wait longer, or temporarily turn off email confirmation while testing.')
+    return new Error('Too many attempts. Please wait a while before trying again.')
   }
 
-  if (message.toLowerCase().includes('invalid') && message.toLowerCase().includes('email')) {
-    return new Error('Supabase rejected the email address format. Try typing the address again manually instead of pasting it.')
+  if (message.toLowerCase().includes('invalid login credentials')) {
+    return new Error('That Study ID or password is not recognised.')
+  }
+
+  if (message.toLowerCase().includes('already registered') || message.toLowerCase().includes('already exists')) {
+    return new Error('That Study ID is already registered. Try signing in instead.')
   }
 
   return error instanceof Error ? error : new Error(message || 'Unable to continue')
 }
 
+// Display name is never collected from participants — it stays a fixed
+// placeholder so the app never stores a real name or other identifier
+// alongside their Study ID. Personalisation is limited to the Maia avatar.
+const FIXED_DISPLAY_NAME = 'Traveller'
+
 function mapProfile(profile, authUser) {
   return {
     id: authUser.id,
-    email: profile?.email || authUser.email || '',
-    displayName: profile?.display_name || authUser.user_metadata?.display_name || authUser.email?.split('@')[0] || 'Traveller',
+    studyId: profile?.study_id || studyIdFromAuthUser(authUser),
+    displayName: FIXED_DISPLAY_NAME,
     avatarConfig: profile?.avatar_config || {},
   }
 }
 
-async function ensureProfile(authUser) {
+async function ensureProfile(authUser, studyId) {
   const existing = await fetchProfile(authUser.id).catch(() => null)
   if (existing) return existing
+
+  const resolvedStudyId = normalizeStudyId(studyId || studyIdFromAuthUser(authUser))
 
   return upsertProfile({
     id: authUser.id,
     email: authUser.email || '',
-    displayName: authUser.user_metadata?.display_name || authUser.email?.split('@')[0] || 'Traveller',
+    displayName: FIXED_DISPLAY_NAME,
     avatarConfig: {},
+    studyId: resolvedStudyId,
   })
 }
 
@@ -96,6 +122,7 @@ export function AuthProvider({ children }) {
         name: nextUser.displayName,
         avatar: nextUser.avatarConfig,
       })
+      flushPendingSync()
     }
   }
 
@@ -129,57 +156,68 @@ export function AuthProvider({ children }) {
       commitUser(mapProfile(profile, session.user))
     })
 
-    return () => listener.subscription.unsubscribe()
+    function onFocus() {
+      if (document.visibilityState === 'visible') flushPendingSync()
+    }
+    document.addEventListener('visibilitychange', onFocus)
+    window.addEventListener('online', onFocus)
+
+    return () => {
+      listener.subscription.unsubscribe()
+      document.removeEventListener('visibilitychange', onFocus)
+      window.removeEventListener('online', onFocus)
+    }
   }, [])
 
-  async function login(email, password) {
-    const normalizedEmail = normalizeEmail(email)
-    if (!normalizedEmail) throw new Error('Please enter a valid email address')
+  async function login(studyId, password) {
+    const normalizedStudyId = normalizeStudyId(studyId)
+    const email = studyIdToEmail(normalizedStudyId)
+    if (!email) throw new Error('Please enter your Study ID')
 
     const client = requireSupabase()
-    const { data, error } = await client.auth.signInWithPassword({
-      email: normalizedEmail,
-      password,
-    })
+    const { data, error } = await client.auth.signInWithPassword({ email, password })
     if (error) throw formatAuthError(error)
 
-    const profile = await ensureProfile(data.user).catch(() => null)
+    const profile = await ensureProfile(data.user, normalizedStudyId).catch(() => null)
     const nextUser = mapProfile(profile, data.user)
     commitUser(nextUser)
     return nextUser
   }
 
-  async function register(email, password, displayName) {
-    const normalizedEmail = normalizeEmail(email)
-    const normalizedDisplayName = normalizeDisplayName(displayName)
-    if (!normalizedEmail) throw new Error('Please enter a valid email address')
+  async function register(studyId, password) {
+    const normalizedStudyId = normalizeStudyId(studyId)
+    const email = studyIdToEmail(normalizedStudyId)
+    if (!email) throw new Error('Please enter your Study ID')
 
     const client = requireSupabase()
     const { data, error } = await client.auth.signUp({
-      email: normalizedEmail,
+      email,
       password,
       options: {
-        data: { display_name: normalizedDisplayName },
+        data: { study_id: normalizedStudyId },
       },
     })
     if (error) throw formatAuthError(error)
-    if (!data.user) throw new Error('Supabase did not return a user')
+    if (!data.user) throw new Error('Unable to create account')
 
     if (!data.session) {
+      // Supabase project still has "Confirm email" enabled for the Email
+      // provider. Since the address is synthetic, no confirmation mail will
+      // ever arrive — this must be turned off in the Supabase dashboard.
       return {
         needsEmailConfirmation: true,
-        email: normalizedEmail,
+        studyId: normalizedStudyId,
       }
     }
 
     const profile = await ensureProfile({
       ...data.user,
-      email: data.user.email || normalizedEmail,
+      email: data.user.email || email,
       user_metadata: {
         ...(data.user.user_metadata || {}),
-        display_name: normalizedDisplayName,
+        study_id: normalizedStudyId,
       },
-    })
+    }, normalizedStudyId)
 
     const nextUser = mapProfile(profile, data.user)
     commitUser(nextUser)
@@ -209,8 +247,8 @@ export function AuthProvider({ children }) {
 
     const profile = await upsertProfile({
       id: data.user.id,
-      email: data.user.email || user?.email || '',
-      displayName: payload.displayName ?? user?.displayName ?? 'Traveller',
+      email: data.user.email || '',
+      displayName: FIXED_DISPLAY_NAME,
       avatarConfig: payload.avatarConfig ?? user?.avatarConfig ?? {},
     })
 

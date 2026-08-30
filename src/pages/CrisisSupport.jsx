@@ -3,30 +3,46 @@ import { useAuth } from '../context/AuthContext'
 
 const HOTLINES = [
   {
+    name: 'NUS University Counselling Services (UCS)',
+    detail: 'Free and confidential counselling for NUS students experiencing personal, emotional, academic, or mental health concerns.',
+    tel: '65162376',
+    telLabel: '6516 2376',
+    email: 'UCS@nus.edu.sg',
+  },
+  {
+    name: 'NUS Lifeline (24-Hour Psychological Support)',
+    detail: '24-hour support for students experiencing emotional distress, psychological crises, or urgent mental health concerns.',
+    tel: '65167777',
+    telLabel: '6516 7777',
+  },
+  {
+    name: 'NUS Student Wellness',
+    detail: 'Wellbeing support, wellness consultations, peer support programmes, and information on available resources for students.',
+    email: 'studentwellness@nus.edu.sg',
+  },
+  {
+    name: 'Peer Student Supporters (PSS)',
+    detail: 'Trained student volunteers who provide peer support and can help connect students with appropriate resources and services.',
+    website: 'https://osa.nus.edu.sg/wellness/wellness-initiatives/peer-student-supporters/',
+    websiteLabel: 'Visit website',
+  },
+  {
+    name: 'Community Health Assessment Team (CHAT)',
+    detail: 'Free mental health assessments, mental health information, and support for young people and young adults.',
+    tel: '64936500',
+    telLabel: '6493 6500',
+    website: 'https://www.chat.mentalhealth.sg',
+    websiteLabel: 'chat.mentalhealth.sg',
+  },
+  {
     name: 'Samaritans of Singapore (SOS)',
-    detail: '24 hours, every day',
+    detail: '24-hour confidential emotional support for individuals experiencing emotional distress, crisis situations, or suicidal thoughts.',
     tel: '1767',
-    telLabel: '1-767',
+    telLabel: '1767',
     whatsapp: '6591511767',
     whatsappLabel: 'CareText: 9151 1767',
-  },
-  {
-    name: 'National Care Hotline',
-    detail: 'Daily, for anyone needing emotional support',
-    tel: '18002026868',
-    telLabel: '1800-202-6868',
-  },
-  {
-    name: 'IMH Mental Health Helpline',
-    detail: 'Institute of Mental Health, 24 hours',
-    tel: '63892222',
-    telLabel: '6389-2222',
-  },
-  {
-    name: 'Singapore Association for Mental Health (SAMH)',
-    detail: 'Weekdays, for mental health and family support',
-    tel: '18002837019',
-    telLabel: '1800-283-7019',
+    website: 'https://www.sos.org.sg',
+    websiteLabel: 'sos.org.sg',
   },
 ]
 
@@ -90,12 +106,24 @@ export default function CrisisSupport() {
                   <p style={{ color: 'rgba(255,240,200,0.5)', fontSize: '0.78rem', marginTop: 2 }}>{l.detail}</p>
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
-                  <a href={`tel:${l.tel}`} style={{ padding: '8px 14px', borderRadius: 999, background: '#ef4444', color: 'white', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 600 }}>
-                    Call {l.telLabel}
-                  </a>
+                  {l.tel && (
+                    <a href={`tel:${l.tel}`} style={{ padding: '8px 14px', borderRadius: 999, background: '#ef4444', color: 'white', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 600 }}>
+                      Call {l.telLabel}
+                    </a>
+                  )}
                   {l.whatsapp && (
                     <a href={`https://wa.me/${l.whatsapp}`} target="_blank" rel="noreferrer" style={{ padding: '8px 14px', borderRadius: 999, border: '1px solid #ef4444', color: '#fca5a5', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 600 }}>
                       WhatsApp
+                    </a>
+                  )}
+                  {l.email && (
+                    <a href={`mailto:${l.email}`} style={{ padding: '8px 14px', borderRadius: 999, border: '1px solid #ef4444', color: '#fca5a5', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 600 }}>
+                      Email
+                    </a>
+                  )}
+                  {l.website && (
+                    <a href={l.website} target="_blank" rel="noreferrer" style={{ padding: '8px 14px', borderRadius: 999, border: '1px solid #ef4444', color: '#fca5a5', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 600 }}>
+                      {l.websiteLabel || 'Website'}
                     </a>
                   )}
                 </div>

@@ -3,11 +3,20 @@ create extension if not exists pgcrypto;
 create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   email text not null unique,
+  study_id text not null unique,
   display_name text not null default 'Traveller',
   avatar_config jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Migrating an existing database that predates study_id? Run this first:
+-- alter table public.profiles add column if not exists study_id text;
+-- -- backfill study_id for any existing rows (e.g. from the email prefix)
+-- -- before adding the not-null + unique constraints below:
+-- update public.profiles set study_id = split_part(email, '@', 1) where study_id is null;
+-- alter table public.profiles alter column study_id set not null;
+-- alter table public.profiles add constraint profiles_study_id_key unique (study_id);
 
 create table if not exists public.villa_entries (
   id uuid primary key default gen_random_uuid(),

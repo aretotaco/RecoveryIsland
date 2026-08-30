@@ -11,8 +11,8 @@ export default function CrisisHud() {
       onClick={() => navigate('/crisis-support')}
       style={{
         position: 'fixed',
-        top: 16,
-        left: 16,
+        bottom: 16,
+        right: 16,
         zIndex: 40,
         display: 'flex',
         alignItems: 'center',
