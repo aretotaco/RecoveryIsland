@@ -34,14 +34,25 @@ create table if not exists public.villa_entries (
 alter table public.profiles enable row level security;
 alter table public.villa_entries enable row level security;
 
+-- Participants can read and write their own profile/entries, but DELETE is
+-- intentionally never granted here: with self-registration and self-service
+-- data deletion removed from the app, this stops a participant from erasing
+-- their own rows even by calling the Supabase REST API directly. Only the
+-- service_role key (used server-side for the admin export) bypasses RLS.
 drop policy if exists "Profiles are viewable by owner" on public.profiles;
 create policy "Profiles are viewable by owner"
 on public.profiles for select
 using (auth.uid() = id);
 
 drop policy if exists "Profiles are editable by owner" on public.profiles;
-create policy "Profiles are editable by owner"
-on public.profiles for all
+drop policy if exists "Profiles are insertable by owner" on public.profiles;
+create policy "Profiles are insertable by owner"
+on public.profiles for insert
+with check (auth.uid() = id);
+
+drop policy if exists "Profiles are updatable by owner" on public.profiles;
+create policy "Profiles are updatable by owner"
+on public.profiles for update
 using (auth.uid() = id)
 with check (auth.uid() = id);
 
@@ -51,7 +62,13 @@ on public.villa_entries for select
 using (auth.uid() = user_id);
 
 drop policy if exists "Entries are editable by owner" on public.villa_entries;
-create policy "Entries are editable by owner"
-on public.villa_entries for all
+drop policy if exists "Entries are insertable by owner" on public.villa_entries;
+create policy "Entries are insertable by owner"
+on public.villa_entries for insert
+with check (auth.uid() = user_id);
+
+drop policy if exists "Entries are updatable by owner" on public.villa_entries;
+create policy "Entries are updatable by owner"
+on public.villa_entries for update
 using (auth.uid() = user_id)
 with check (auth.uid() = user_id);

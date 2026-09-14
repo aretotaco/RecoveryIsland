@@ -1,4 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useAuth } from '../context/AuthContext'
+import { fetchEntries, syncEntry } from '../lib/villaSync'
+
+function readLS(k, fb) { try { return JSON.parse(localStorage.getItem(k) || 'null') ?? fb } catch { return fb } }
+function todayKey() { return new Date().toDateString() }
 
 const AFFIRMATIONS = [
   { category: 'Morning', text: 'Today is a new beginning. I welcome it with an open heart.' },
@@ -62,163 +67,270 @@ const GRATITUDE_PROMPTS = [
   'Notice something beautiful in your environment right now. Sit with it for 30 seconds.',
 ]
 
-export function AffirmationDeck() {
-  const [index, setIndex] = useState(0)
-  const current = AFFIRMATIONS[index]
+const AFFIRMATION_CATEGORIES = ['All', ...new Set(AFFIRMATIONS.map(a => a.category)), 'Favourites']
 
-  const prev = () => setIndex(i => (i - 1 + AFFIRMATIONS.length) % AFFIRMATIONS.length)
-  const next = () => setIndex(i => (i + 1) % AFFIRMATIONS.length)
+export function AffirmationDeck() {
+  const [category, setCategory] = useState('All')
+  const [index, setIndex] = useState(0)
+  const [favourites, setFavourites] = useState(() => readLS('ri_affirmation_favourites', []))
+
+  const list = category === 'All'
+    ? AFFIRMATIONS
+    : category === 'Favourites'
+      ? AFFIRMATIONS.filter(a => favourites.includes(a.text))
+      : AFFIRMATIONS.filter(a => a.category === category)
+
+  const current = list[Math.min(index, Math.max(list.length - 1, 0))]
+  const isFavourite = current ? favourites.includes(current.text) : false
+
+  function changeCategory(cat) {
+    setCategory(cat)
+    setIndex(0)
+  }
+
+  const prev = () => setIndex(i => (i - 1 + list.length) % list.length)
+  const next = () => setIndex(i => (i + 1) % list.length)
   const shuffle = () => {
+    if (list.length < 2) return
     let n
-    do { n = Math.floor(Math.random() * AFFIRMATIONS.length) } while (n === index)
+    do { n = Math.floor(Math.random() * list.length) } while (n === index)
     setIndex(n)
+  }
+
+  function toggleFavourite() {
+    if (!current) return
+    const next = isFavourite ? favourites.filter(t => t !== current.text) : [...favourites, current.text]
+    setFavourites(next)
+    try { localStorage.setItem('ri_affirmation_favourites', JSON.stringify(next)) } catch { /* ignore */ }
   }
 
   return (
     <div className="affirmation-deck">
-      <span className="affirmation-category">{current.category}</span>
-      <p className="affirmation-text" key={index}>"{current.text}"</p>
-      <div className="affirmation-nav">
-        <button className="affirmation-arrow" onClick={prev} aria-label="Previous">←</button>
-        <button className="affirmation-shuffle" onClick={shuffle}>✦ Shuffle</button>
-        <button className="affirmation-arrow" onClick={next} aria-label="Next">→</button>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}>
+        {AFFIRMATION_CATEGORIES.map(cat => (
+          <button key={cat} onClick={() => changeCategory(cat)} style={{
+            padding: '5px 12px', borderRadius: 999, cursor: 'pointer', fontSize: '0.72rem',
+            border: category === cat ? '1.5px solid var(--villa-color)' : '1.5px solid rgba(255,255,255,0.12)',
+            background: category === cat ? 'rgba(249,115,22,0.15)' : 'rgba(255,255,255,0.04)',
+            color: category === cat ? 'var(--villa-color-light)' : 'rgba(255,255,255,0.55)',
+          }}>
+            {cat === 'Favourites' ? `\u2661 ${cat}` : cat}
+          </button>
+        ))}
       </div>
-      <p className="affirmation-count">{index + 1} / {AFFIRMATIONS.length}</p>
+
+      {current ? (
+        <>
+          <span className="affirmation-category">{current.category}</span>
+          <p className="affirmation-text" key={current.text}>"{current.text}"</p>
+          <div className="affirmation-nav">
+            <button className="affirmation-arrow" onClick={prev} aria-label="Previous">←</button>
+            <button onClick={toggleFavourite} aria-label="Toggle favourite" style={{
+              background: isFavourite ? 'rgba(249,115,22,0.2)' : 'rgba(255,255,255,0.08)',
+              border: isFavourite ? '1px solid var(--villa-color)' : '1px solid rgba(255,255,255,0.12)',
+              color: isFavourite ? 'var(--villa-color-light)' : 'white',
+              borderRadius: '50%', width: 36, height: 36, fontSize: 15, cursor: 'pointer',
+            }}>
+              {isFavourite ? '\u2665' : '\u2661'}
+            </button>
+            <button className="affirmation-shuffle" onClick={shuffle}>✦ Shuffle</button>
+            <button className="affirmation-arrow" onClick={next} aria-label="Next">→</button>
+          </div>
+          <p className="affirmation-count">{index + 1} / {list.length}</p>
+        </>
+      ) : (
+        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', padding: '10px 0' }}>
+          No favourites yet — tap the heart on an affirmation to save it here.
+        </p>
+      )}
     </div>
   )
 }
 
 export function GoalStepper() {
+  const { isAuthenticated } = useAuth()
   const [open, setOpen] = useState(0)
+  const [intention, setIntention] = useState(() => readLS('ri_goal_intention', ''))
+  const [intentionInput, setIntentionInput] = useState(() => readLS('ri_goal_intention', ''))
+  const [checked, setChecked] = useState(() => readLS('ri_goal_progress', {}))
+
+  useEffect(() => {
+    if (!isAuthenticated) return undefined
+    let active = true
+    fetchEntries({ category: 'inspiration', source: 'goal-tracker', limit: 5 }).then(rows => {
+      if (!active) return
+      const latest = rows[0]?.payload
+      if (latest) {
+        setIntention(latest.intention || '')
+        setIntentionInput(latest.intention || '')
+        setChecked(latest.checked || {})
+        try { localStorage.setItem('ri_goal_intention', JSON.stringify(latest.intention || '')) } catch { /* ignore */ }
+        try { localStorage.setItem('ri_goal_progress', JSON.stringify(latest.checked || {})) } catch { /* ignore */ }
+      }
+    })
+    return () => { active = false }
+  }, [isAuthenticated])
+
+  function persistAndSync(nextIntention, nextChecked) {
+    try { localStorage.setItem('ri_goal_intention', JSON.stringify(nextIntention)) } catch { /* ignore */ }
+    try { localStorage.setItem('ri_goal_progress', JSON.stringify(nextChecked)) } catch { /* ignore */ }
+    syncEntry({
+      category: 'inspiration',
+      source: 'goal-tracker',
+      entryKey: 'current',
+      entryDate: todayKey(),
+      payload: { intention: nextIntention, checked: nextChecked },
+    })
+  }
+
+  function saveIntention() {
+    setIntention(intentionInput.trim())
+    persistAndSync(intentionInput.trim(), checked)
+  }
+
+  function toggleItem(phaseIndex, itemIndex) {
+    const key = `${phaseIndex}-${itemIndex}`
+    const next = { ...checked, [key]: !checked[key] }
+    setChecked(next)
+    persistAndSync(intention, next)
+  }
+
+  const totalItems = GOAL_PHASES.reduce((sum, p) => sum + p.items.length, 0)
+  const doneItems = Object.values(checked).filter(Boolean).length
 
   return (
-    <div className="goal-stepper">
-      {GOAL_PHASES.map((phase, i) => (
-        <div key={i} className={`goal-phase ${open === i ? 'goal-phase--open' : ''}`}>
-          <button className="goal-phase-header" onClick={() => setOpen(open === i ? -1 : i)}>
-            <span className="goal-phase-number">{phase.number}</span>
-            <span className="goal-phase-title">{phase.heading}</span>
-            <span className="goal-phase-chevron">{open === i ? '▲' : '▼'}</span>
-          </button>
-          {open === i && (
-            <ul className="goal-phase-items">
-              {phase.items.map((item, ii) => <li key={ii}>{item}</li>)}
-            </ul>
-          )}
-        </div>
-      ))}
-    </div>
-  )
-}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 14, borderRadius: 14, background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)' }}>
+        <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)' }}>My one intention right now</p>
+        <input
+          value={intentionInput}
+          onChange={e => setIntentionInput(e.target.value)}
+          placeholder="e.g. Go for a 10-minute walk on Tuesdays"
+          style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.06)', color: 'white' }}
+        />
+        <button onClick={saveIntention} style={{ alignSelf: 'flex-start', padding: '8px 16px', borderRadius: 999, border: 'none', background: 'var(--villa-color)', color: 'white', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}>
+          Save intention
+        </button>
+        {intention && <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.75)', fontStyle: 'italic' }}>Current intention: "{intention}"</p>}
+      </div>
 
-const STORIES = [
-  {
-    name: 'Aisha, 19',
-    tag: 'First-Year Anxiety',
-    color: '#8b5cf6',
-    quote: 'I spent my first semester pretending I was fine. The day I walked into the counselling centre and said "I need help" was the hardest and best thing I ever did.',
-    story: "Aisha arrived on campus excited, then quickly felt overwhelmed by lectures, deadlines, and trying to make friends at the same time. She started skipping meals and sleeping badly, telling herself it was just an adjustment period. It wasn't. After finally reaching out to student support, she got a diagnosis of generalised anxiety and a plan that actually fit university life. She now uses a study group, calendar reminders, and regular check-ins to stay grounded.",
-  },
-  {
-    name: 'Daniel, 21',
-    tag: 'Academic Burnout',
-    color: '#6366f1',
-    quote: "I didn't recognise burnout in myself — I just thought I was failing at being a student. Someone else saw it before I did.",
-    story: "Daniel pushed hard through midterms, societies, and a part-time job, then hit a wall he could not power through. He stopped enjoying anything, kept rereading the same page, and felt guilty every time he rested. A tutor noticed he seemed flat and suggested he speak to the campus wellbeing team. That conversation helped him reset his workload, protect his sleep, and stop treating exhaustion like a personality flaw.",
-  },
-  {
-    name: 'Priya, 20',
-    tag: 'Homesickness',
-    color: '#f59e0b',
-    quote: "I thought homesickness meant I was not independent enough. It turned out I just needed time and support.",
-    story: "Priya loved the idea of university until the reality of living far from home hit during her first term. She felt guilty calling her family, avoided common spaces, and kept comparing herself to people who seemed to settle in instantly. A residence advisor encouraged her to join a small study circle and visit the international student office. With routine, connection, and a few familiar rituals from home, the constant ache eased.",
-  },
-  {
-    name: 'Marcus, 22',
-    tag: 'Exam Pressure',
-    color: '#10b981',
-    quote: "I thought everyone else was coping better than me. Once I talked about it, I realised half the class felt the same.",
-    story: "Marcus hit panic mode every exam season and turned into someone he barely recognised — checking notes nonstop, sleeping badly, and constantly assuming he had forgotten everything. A classmate suggested they revise together in short blocks instead of all night. That small change, plus a conversation with a lecturer about extensions, made the pressure feel survivable. He still gets nervous, but he no longer tries to do it alone.",
-  },
-  {
-    name: 'Selin, 23',
-    tag: 'Postgrad Overwhelm',
-    color: '#ec4899',
-    quote: "Everyone expected me to have it together because I was older. I still needed help figuring out how to cope.",
-    story: "Selin returned to university for postgraduate study while balancing work, commuting, and a dissertation that felt endless. She looked fine on the outside but was constantly depleted and increasingly detached from her course. A supervisor encouraged her to break the project into smaller weekly goals and use the university's wellbeing service. She learned that needing support did not make her less capable; it made the work sustainable.",
-  },
-  {
-    name: 'Ravi, 24',
-    tag: 'Grief & Loss',
-    color: '#0ea5e9',
-    quote: "Everyone kept telling me it would get easier with time. What actually helped was letting it be hard, instead of pretending I was fine.",
-    story: "Ravi lost his father in his second year and went straight back to lectures a week later, worried about falling behind. For months he functioned by not feeling much of anything, until a small, unrelated setback made him cry for hours and he realised he had never actually grieved. A bereavement counsellor helped him understand that grief does not follow a timetable, and that returning to normal life quickly is not the same as being okay. He started letting himself mark the hard dates — his father's birthday, the anniversary — instead of pushing through them, and slowly the grief became something he carried rather than something that ambushed him.",
-  },
-  {
-    name: 'Elena, 26',
-    tag: 'Chronic Illness & Isolation',
-    color: '#a855f7',
-    quote: "I used to measure my worth by what I could push through. Learning to rest without guilt was harder than the diagnosis itself.",
-    story: "Elena was diagnosed with a chronic autoimmune condition in her mid-twenties, right as her career was picking up pace. Flare-ups meant cancelled plans and days she could barely leave bed, and she started declining invitations before people could see her at her worst. The isolation crept in quietly — fewer messages, fewer check-ins, a growing sense that she had to manage this entirely on her own. Joining an online support group for people with chronic illness was the turning point: hearing others describe the exact same guilt and grief gave her language for what she was feeling. She still has hard weeks, but she no longer disappears during them.",
-  },
-]
+      {doneItems > 0 && (
+        <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', textAlign: 'center' }}>
+          {doneItems} of {totalItems} steps checked off across the phases below.
+        </p>
+      )}
 
-export function StoriesOfHope() {
-  const [expanded, setExpanded] = useState(null)
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      {STORIES.map((s, i) => {
-        const open = expanded === i
-        return (
-          <div key={i} style={{
-            border: `1px solid ${open ? s.color + '60' : 'rgba(255,215,150,0.12)'}`,
-            background: open ? `${s.color}10` : 'rgba(255,245,220,0.04)',
-            borderRadius: 14, overflow: 'hidden', transition: 'all 0.25s',
-          }}>
-            <button onClick={() => setExpanded(open ? null : i)} style={{
-              width: '100%', display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 16px',
-              background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', color: 'white',
-            }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: `${s.color}30`, border: `2px solid ${s.color}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>
-                {s.name[0]}
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'rgba(255,240,200,0.9)' }}>{s.name}</span>
-                  <span style={{ fontSize: '0.7rem', background: `${s.color}25`, color: s.color, borderRadius: 6, padding: '2px 8px', fontWeight: 600 }}>{s.tag}</span>
-                </div>
-                <p style={{ fontSize: '0.82rem', color: 'rgba(255,240,200,0.55)', fontStyle: 'italic', lineHeight: 1.5 }}>"{s.quote}"</p>
-              </div>
-              <span style={{ fontSize: '0.85rem', color: 'rgba(255,240,200,0.3)', flexShrink: 0, marginTop: 2 }}>{open ? '▲' : '▼'}</span>
+      <div className="goal-stepper">
+        {GOAL_PHASES.map((phase, i) => (
+          <div key={i} className={`goal-phase ${open === i ? 'goal-phase--open' : ''}`}>
+            <button className="goal-phase-header" onClick={() => setOpen(open === i ? -1 : i)}>
+              <span className="goal-phase-number">{phase.number}</span>
+              <span className="goal-phase-title">{phase.heading}</span>
+              <span className="goal-phase-chevron">{open === i ? '▲' : '▼'}</span>
             </button>
-            {open && (
-              <div style={{ padding: '0 16px 16px 68px', fontSize: '0.85rem', color: 'rgba(255,240,200,0.7)', lineHeight: 1.8 }}>
-                {s.story}
-              </div>
+            {open === i && (
+              <ul className="goal-phase-items" style={{ listStyle: 'none', paddingLeft: 0 }}>
+                {phase.items.map((item, ii) => {
+                  const key = `${i}-${ii}`
+                  const isChecked = !!checked[key]
+                  return (
+                    <li key={ii} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer' }} onClick={() => toggleItem(i, ii)}>
+                      <span style={{
+                        flexShrink: 0, marginTop: 2, width: 16, height: 16, borderRadius: 4,
+                        border: isChecked ? '1.5px solid var(--villa-color)' : '1.5px solid rgba(255,255,255,0.3)',
+                        background: isChecked ? 'var(--villa-color)' : 'transparent',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: 'white',
+                      }}>
+                        {isChecked ? '✓' : ''}
+                      </span>
+                      <span style={{ textDecoration: isChecked ? 'line-through' : 'none', opacity: isChecked ? 0.6 : 1 }}>{item}</span>
+                    </li>
+                  )
+                })}
+              </ul>
             )}
           </div>
-        )
-      })}
-      <p style={{ fontSize: '0.75rem', color: 'rgba(255,240,200,0.3)', textAlign: 'center', marginTop: 4 }}>
-        Stories are fictional composites created to represent common lived experiences.
-      </p>
+        ))}
+      </div>
     </div>
   )
 }
 
 export function GratitudePromptPicker() {
+  const { isAuthenticated } = useAuth()
   const [index, setIndex] = useState(0)
+  const [reflection, setReflection] = useState('')
+  const [entries, setEntries] = useState(() => readLS('ri_gratitude_entries', []))
   const next = () => setIndex(i => (i + 1) % GRATITUDE_PROMPTS.length)
 
+  useEffect(() => {
+    if (!isAuthenticated) return undefined
+    let active = true
+    fetchEntries({ category: 'inspiration', source: 'gratitude-practice', limit: 30 }).then(rows => {
+      if (!active) return
+      const remoteEntries = rows
+        .map(r => r.payload)
+        .filter(p => p?.text)
+        .sort((a, b) => (b.ts || 0) - (a.ts || 0))
+        .slice(0, 5)
+      if (remoteEntries.length > 0) {
+        setEntries(remoteEntries)
+        try { localStorage.setItem('ri_gratitude_entries', JSON.stringify(remoteEntries)) } catch { /* ignore */ }
+      }
+    })
+    return () => { active = false }
+  }, [isAuthenticated])
+
+  function saveReflection() {
+    if (!reflection.trim()) return
+    const entry = { id: Date.now(), ts: Date.now(), prompt: GRATITUDE_PROMPTS[index], text: reflection.trim() }
+    const nextEntries = [entry, ...entries].slice(0, 5)
+    setEntries(nextEntries)
+    try { localStorage.setItem('ri_gratitude_entries', JSON.stringify(nextEntries)) } catch { /* ignore */ }
+    syncEntry({
+      category: 'inspiration',
+      source: 'gratitude-practice',
+      entryKey: `${todayKey()}-${entry.id}`,
+      payload: entry,
+    })
+    setReflection('')
+  }
+
   return (
-    <div className="gratitude-prompt">
-      <p className="gratitude-label">Today's Prompt</p>
-      <p className="gratitude-text" key={index}>{GRATITUDE_PROMPTS[index]}</p>
-      <div className="gratitude-footer">
-        <span className="gratitude-count">{index + 1} of {GRATITUDE_PROMPTS.length}</span>
-        <button className="gratitude-next" onClick={next}>Next Prompt →</button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div className="gratitude-prompt">
+        <p className="gratitude-label">Today's Prompt</p>
+        <p className="gratitude-text" key={index}>{GRATITUDE_PROMPTS[index]}</p>
+        <div className="gratitude-footer">
+          <span className="gratitude-count">{index + 1} of {GRATITUDE_PROMPTS.length}</span>
+          <button className="gratitude-next" onClick={next}>Next Prompt →</button>
+        </div>
       </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <textarea
+          value={reflection}
+          onChange={e => setReflection(e.target.value)}
+          placeholder="Write a short reflection to this prompt..."
+          rows={3}
+          style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.06)', color: 'white', resize: 'vertical' }}
+        />
+        <button onClick={saveReflection} style={{ alignSelf: 'flex-start', padding: '9px 16px', borderRadius: 999, border: 'none', background: 'var(--villa-color)', color: 'white', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}>
+          Save reflection
+        </button>
+      </div>
+
+      {entries.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>Recent reflections</p>
+          {entries.map(e => (
+            <div key={e.id} style={{ padding: 12, borderRadius: 12, background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <p style={{ fontSize: '0.72rem', color: 'var(--villa-color-light)', marginBottom: 4 }}>{e.prompt}</p>
+              <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.5 }}>{e.text}</p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

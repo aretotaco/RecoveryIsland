@@ -52,36 +52,6 @@ app.post('/api/chat', async (req, res) => {
   }
 })
 
-app.delete('/api/account', async (req, res) => {
-  const authHeader = req.headers.authorization || ''
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null
-
-  if (!token) {
-    return res.status(401).json({ message: 'Missing auth token' })
-  }
-
-  const supabaseUrl = process.env.VITE_SUPABASE_URL
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    return res.status(500).json({ message: 'Account deletion is not configured yet. Add SUPABASE_SERVICE_ROLE_KEY to your server .env file.' })
-  }
-
-  const admin = createClient(supabaseUrl, serviceRoleKey)
-
-  const { data: userData, error: userError } = await admin.auth.getUser(token)
-  if (userError || !userData?.user) {
-    return res.status(401).json({ message: 'Invalid or expired session' })
-  }
-
-  const { error: deleteError } = await admin.auth.admin.deleteUser(userData.user.id)
-  if (deleteError) {
-    return res.status(500).json({ message: deleteError.message || 'Unable to delete account' })
-  }
-
-  return res.status(200).json({ ok: true })
-})
-
 async function fetchAllRows(client, table, columns) {
   const pageSize = 1000
   let from = 0
@@ -315,6 +285,36 @@ app.get('/api/admin/export-excel', async (req, res) => {
         date: e.entry_date,
         attempts: e.payload?.attempts ?? '',
         bestScore: e.payload?.bestScore ?? '',
+      })))
+
+    // Goal Tracker stores one row per user holding the current intention +
+    // checklist state, so this reflects the latest saved goal, not a history.
+    addSheet(workbook, 'Goals', [
+      { header: 'Study ID', key: 'study_id', width: 16 },
+      { header: 'Last Updated', key: 'date', width: 14 },
+      { header: 'Intention', key: 'intention', width: 40 },
+      { header: 'Steps Checked Off', key: 'checked', width: 16 },
+    ], entries
+      .filter(e => e.category === 'inspiration' && e.source === 'goal-tracker')
+      .map(e => ({
+        study_id: studyIdOf(e.user_id),
+        date: e.entry_date,
+        intention: e.payload?.intention || '',
+        checked: Object.values(e.payload?.checked || {}).filter(Boolean).length,
+      })))
+
+    addSheet(workbook, 'Gratitude', [
+      { header: 'Study ID', key: 'study_id', width: 16 },
+      { header: 'Date', key: 'date', width: 14 },
+      { header: 'Prompt', key: 'prompt', width: 40 },
+      { header: 'Reflection', key: 'text', width: 60 },
+    ], entries
+      .filter(e => e.category === 'inspiration' && e.source === 'gratitude-practice')
+      .map(e => ({
+        study_id: studyIdOf(e.user_id),
+        date: e.entry_date,
+        prompt: e.payload?.prompt || '',
+        text: e.payload?.text || '',
       })))
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')

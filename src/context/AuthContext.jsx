@@ -184,46 +184,6 @@ export function AuthProvider({ children }) {
     return nextUser
   }
 
-  async function register(studyId, password) {
-    const normalizedStudyId = normalizeStudyId(studyId)
-    const email = studyIdToEmail(normalizedStudyId)
-    if (!email) throw new Error('Please enter your Study ID')
-
-    const client = requireSupabase()
-    const { data, error } = await client.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { study_id: normalizedStudyId },
-      },
-    })
-    if (error) throw formatAuthError(error)
-    if (!data.user) throw new Error('Unable to create account')
-
-    if (!data.session) {
-      // Supabase project still has "Confirm email" enabled for the Email
-      // provider. Since the address is synthetic, no confirmation mail will
-      // ever arrive — this must be turned off in the Supabase dashboard.
-      return {
-        needsEmailConfirmation: true,
-        studyId: normalizedStudyId,
-      }
-    }
-
-    const profile = await ensureProfile({
-      ...data.user,
-      email: data.user.email || email,
-      user_metadata: {
-        ...(data.user.user_metadata || {}),
-        study_id: normalizedStudyId,
-      },
-    }, normalizedStudyId)
-
-    const nextUser = mapProfile(profile, data.user)
-    commitUser(nextUser)
-    return nextUser
-  }
-
   async function logout() {
     const client = requireSupabase()
     await client.auth.signOut()
@@ -262,7 +222,6 @@ export function AuthProvider({ children }) {
     loading,
     isAuthenticated: Boolean(user),
     login,
-    register,
     logout,
     refresh,
     updateProfile,
