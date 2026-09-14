@@ -274,6 +274,49 @@ app.get('/api/admin/export-excel', async (req, res) => {
         reflection: e.payload?.reflection || '',
       })))
 
+    addSheet(workbook, 'Hydration', [
+      { header: 'Study ID', key: 'study_id', width: 16 },
+      { header: 'Date', key: 'date', width: 14 },
+      { header: 'Cups Logged', key: 'cups', width: 14 },
+    ], entries
+      .filter(e => e.category === 'wellness' && e.source === 'hydration-tracker')
+      .map(e => ({
+        study_id: studyIdOf(e.user_id),
+        date: e.entry_date,
+        cups: e.payload?.cups ?? '',
+      })))
+
+    // Routine Builder stores one row per (user, tab) holding the current
+    // checklist, so this reflects the latest saved routine rather than a
+    // daily history.
+    addSheet(workbook, 'Routine', [
+      { header: 'Study ID', key: 'study_id', width: 16 },
+      { header: 'Last Updated', key: 'date', width: 14 },
+      { header: 'Routine', key: 'tab', width: 12 },
+      { header: 'Selected Items', key: 'items', width: 60 },
+    ], entries
+      .filter(e => e.category === 'wellness' && e.source === 'routine-builder')
+      .map(e => ({
+        study_id: studyIdOf(e.user_id),
+        date: e.entry_date,
+        tab: e.payload?.tab || e.entry_key || '',
+        items: (e.payload?.items || []).join(', '),
+      })))
+
+    addSheet(workbook, 'Quiz', [
+      { header: 'Study ID', key: 'study_id', width: 16 },
+      { header: 'Date', key: 'date', width: 14 },
+      { header: 'Attempts', key: 'attempts', width: 12 },
+      { header: 'Best Score (out of 6)', key: 'bestScore', width: 18 },
+    ], entries
+      .filter(e => e.category === 'wellness' && e.source === 'wellness-quiz')
+      .map(e => ({
+        study_id: studyIdOf(e.user_id),
+        date: e.entry_date,
+        attempts: e.payload?.attempts ?? '',
+        bestScore: e.payload?.bestScore ?? '',
+      })))
+
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     res.setHeader('Content-Disposition', `attachment; filename="recovery-island-export-${new Date().toISOString().slice(0, 10)}.xlsx"`)
     await workbook.xlsx.write(res)

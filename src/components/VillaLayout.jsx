@@ -64,70 +64,70 @@ export default function VillaLayout({ villa }) {
       </div>
 
       <div className="villa-content">
-        {villa.sections.map((section, i) => (
-          <div key={i} className="villa-card" style={{ animationDelay: `${i * 0.1}s` }}>
-            {(() => {
-              const embedUrl = normalizeVideoUrl(section.videoUrl)
-              return (
-                <>
-            <div className="card-icon">{section.icon}</div>
-            <h3 className="card-title">{section.title}</h3>
-            <p className="card-text">{section.text}</p>
-            {embedUrl && (
-              <div className="card-video">
-                <iframe
-                  src={embedUrl}
-                  title={section.title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
-            )}
-            {section.videoUrl && embedUrl && (
-              <a
-                href={section.videoUrl}
-                target="_blank"
-                rel="noreferrer"
-                style={{ display: 'inline-block', marginTop: 10, color: 'rgba(255,240,200,0.75)', fontSize: '0.82rem' }}
-              >
-                If YouTube blocks the embed, open this video on YouTube.
-              </a>
-            )}
-            {section.localVideoUrl && (
-              <div className="card-video card-video--local">
-                <video controls preload="metadata">
-                  <source src={section.localVideoUrl} type="video/mp4" />
-                </video>
-              </div>
-            )}
-            {section.script && (
-              <div style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: 14,
-                padding: '18px 20px',
-                marginTop: 14,
-                color: 'rgba(255,240,200,0.75)',
-                fontSize: '0.88rem',
-                lineHeight: 1.9,
-                whiteSpace: 'pre-line',
-                fontStyle: 'italic',
-                maxHeight: 320,
-                overflowY: 'auto',
-              }}>
-                {section.script}
-              </div>
-            )}
-            {section.component && (
-              <div style={{ marginTop: 16 }}>
-                {section.component}
-              </div>
-            )}
-                </>
-              )
-            })()}
-          </div>
-        ))}
+        {villa.sections.map((section, i) => {
+          const embedUrl = normalizeVideoUrl(section.videoUrl)
+          // Sections with a lot of content (video/script/interactive tool) take the full row
+          // width instead of squeezing into a narrow column alongside short text cards.
+          const isWide = !!(embedUrl || section.localVideoUrl || section.script || section.component)
+
+          return (
+            <div key={i} className="villa-card" style={{ animationDelay: `${i * 0.1}s`, gridColumn: isWide ? '1 / -1' : undefined }}>
+              <div className="card-icon">{section.icon}</div>
+              <h3 className="card-title">{section.title}</h3>
+              <p className="card-text">{section.text}</p>
+              {embedUrl && (
+                <div className="card-video">
+                  <iframe
+                    src={embedUrl}
+                    title={section.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              )}
+              {section.videoUrl && embedUrl && (
+                <a
+                  href={section.videoUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ display: 'inline-block', marginTop: 10, color: 'rgba(255,240,200,0.75)', fontSize: '0.82rem' }}
+                >
+                  If YouTube blocks the embed, open this video on YouTube.
+                </a>
+              )}
+              {section.localVideoUrl && (
+                <div className="card-video card-video--local">
+                  <video controls preload="metadata">
+                    <source src={section.localVideoUrl} type="video/mp4" />
+                  </video>
+                </div>
+              )}
+              {section.script && (
+                <div style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 14,
+                  padding: '18px 20px',
+                  marginTop: 14,
+                  color: 'rgba(255,240,200,0.75)',
+                  fontSize: '0.88rem',
+                  lineHeight: 1.9,
+                  whiteSpace: 'pre-line',
+                  fontStyle: 'italic',
+                  maxHeight: 320,
+                  overflowY: 'auto',
+                }}>
+                  {section.script}
+                </div>
+              )}
+              {section.component && (
+                <div style={{ marginTop: 16 }}>
+                  {section.component}
+                </div>
+              )}
+            </div>
+          )
+        })}
 
       </div>
 

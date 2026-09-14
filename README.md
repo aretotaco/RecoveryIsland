@@ -14,7 +14,7 @@ Add these to `.env`:
 - `VITE_SUPABASE_ANON_KEY`
 - `ANTHROPIC_API_KEY` if you want the AI companion working locally
 - `SUPABASE_SERVICE_ROLE_KEY` (server-only) — enables "Delete my account permanently" in Settings and the admin Excel export. Get it from Supabase Dashboard → Project Settings → API → `service_role` secret. Without it, account deletion shows a friendly "not configured" message; "Erase all my data" works either way.
-- `ADMIN_EXPORT_KEY` (server-only) — a password you choose, required to use the admin Excel export at `/admin-export`. Pick something long and random; anyone with this key can download all participant data.
+- `ADMIN_EXPORT_KEY` (server-only) — a password you choose, required to use the admin Excel export at `/admin`. Pick something long and random; anyone with this key can download all participant data.
 
 ## Development
 
@@ -46,7 +46,7 @@ top of `supabase/schema.sql` for adding `study_id` to an already-populated
 
 ## Admin Excel export
 
-Visit `/admin-export`, enter the `ADMIN_EXPORT_KEY` you set on the server,
+Visit `/admin`, enter the `ADMIN_EXPORT_KEY` you set on the server,
 and download a single `.xlsx` workbook with every participant's data
 (Profiles, Mood, Journal, Assessments, Sleep, Movement, Nourishment sheets),
 identified only by Study ID. This route is not linked from the app's

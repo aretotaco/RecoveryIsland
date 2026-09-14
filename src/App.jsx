@@ -54,7 +54,7 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<AuthOnlyRoute><AuthPage /></AuthOnlyRoute>} />
           <Route path="/crisis-support" element={<CrisisSupport />} />
-          <Route path="/admin-export" element={<AdminExport />} />
+          <Route path="/admin" element={<AdminExport />} />
           <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/concierge" element={<ProtectedRoute><ConciergeVilla /></ProtectedRoute>} />
           <Route path="/mood-diary" element={<ProtectedRoute><MoodDiaryCentre /></ProtectedRoute>} />
