@@ -508,7 +508,10 @@ export default function IslandMap() {
       <CheckInReminder />
 
       <div className="island-title">
-        <h1>Recovery Island</h1>
+        <div className="island-title-row">
+          <img src="/assets/Recovery%20Island%20Logo.png" alt="" className="island-logo" />
+          <h1>Recovery Island</h1>
+        </div>
         <p>Welcome back, {profile.name}</p>
         <p>Choose your wellness destination</p>
       </div>

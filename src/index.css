@@ -113,6 +113,19 @@ body {
   text-shadow: 0 2px 20px rgba(0,0,0,0.3);
 }
 
+.island-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.island-logo {
+  width: clamp(30px, 3.2vw, 44px);
+  height: clamp(30px, 3.2vw, 44px);
+  object-fit: contain;
+  filter: drop-shadow(0 2px 10px rgba(0,0,0,0.35));
+}
+
 .island-title p {
   font-size: clamp(10px, 1.2vw, 13px);
   color: rgba(255,255,255,0.7);

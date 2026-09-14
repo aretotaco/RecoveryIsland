@@ -36,7 +36,7 @@ export default function SettingsPage() {
         <div className="villa-emoji">⚙️</div>
         <div className="villa-tag">Settings</div>
         <h1 className="villa-title">Your Account</h1>
-        <p className="villa-subtitle">Manage your profile, login details, and data.</p>
+        <p className="villa-subtitle">Manage your profile.</p>
       </div>
 
       <div className="villa-content">
@@ -65,13 +65,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="villa-card">
-          <div className="card-icon">🔒</div>
-          <h3 className="card-title">Your data</h3>
-          <p className="card-text">Recovery Island keeps your mood, wellness, and assessment logs so it can show you your own summaries and insights over time. Data export and deletion are managed by the study team, not from this page.</p>
-        </div>
-
-        <div className="villa-card">
-          <div className="card-icon">👋</div>
+          <div className="card-icon"></div>
           <h3 className="card-title">Sign out</h3>
           <p className="card-text">You can always come back — your data stays saved.</p>
           <button className="card-btn" style={{ background: 'rgba(255,255,255,0.12)' }} onClick={() => { logout(); navigate('/login') }}>
