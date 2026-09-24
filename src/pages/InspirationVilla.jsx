@@ -21,15 +21,13 @@ export default function InspirationVilla() {
           icon: '🎓',
           title: 'Coping With Academic Stress: You Are Doing More Than You Think',
           text: 'A short video on recognising academic pressure for what it is, and finding steadier ground when the workload feels like too much.',
-          // TODO: replace with the real Unlisted YouTube link once uploaded.
-          videoUrl: 'https://youtu.be/REPLACE_WITH_VIDEO_1_ID',
+          videoUrl: 'https://youtu.be/2Ckfep6RHrg',
         },
         {
           icon: '🌍',
           title: 'Finding Belonging in a New Culture: Finding Your Place',
           text: 'On the quiet disorientation of adjusting to a new culture or place, and what it takes to start feeling at home again.',
-          // TODO: replace with the real Unlisted YouTube link once uploaded.
-          videoUrl: 'https://youtu.be/REPLACE_WITH_VIDEO_2_ID',
+          videoUrl: 'https://youtu.be/bGh1-hh-kQU',
         },
         {
           icon: '💼',
