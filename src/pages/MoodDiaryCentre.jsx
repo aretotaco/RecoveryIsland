@@ -402,7 +402,7 @@ export default function MoodDiaryCentre() {
                   )}
                 </div>
                 {s?.date && (
-                  <p style={{ marginTop: 10, fontSize: '0.74rem', color: 'rgba(255,240,200,0.45)' }}>
+                  <p style={{ marginTop: 10, fontSize: '0.74rem', color: 'var(--ri-text-warm-muted)' }}>
                     Saved {new Date(s.date).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </p>
                 )}
@@ -428,8 +428,8 @@ export default function MoodDiaryCentre() {
 
               <div style={{ display: 'grid', gap: 10 }}>
                 {scoreHistory.slice(0, 6).map(entry => (
-                  <div key={entry.id} style={{ display: 'grid', gap: 10, padding: '14px 16px', borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', color: 'rgba(255,240,200,0.7)', fontSize: '0.82rem' }}>
+                  <div key={entry.id} style={{ display: 'grid', gap: 10, padding: '14px 16px', borderRadius: 14, background: 'var(--ri-card-bg)', border: '1px solid var(--ri-card-border)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', color: 'var(--ri-text-warm-secondary)', fontSize: '0.82rem' }}>
                       <span>{new Date(entry.date).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                       <span>{entry.adviceKey === 'emergency' ? 'High-support recommendation' : entry.adviceKey === 'professional' ? 'Professional-support recommendation' : 'Self-care recommendation'}</span>
                     </div>
@@ -438,8 +438,8 @@ export default function MoodDiaryCentre() {
                         const historyScore = entry.scores?.[card.id]
                         const historySeverity = historyScore ? card.getSeverity(historyScore.score) : null
                         return (
-                          <div key={card.id} style={{ padding: '10px 12px', borderRadius: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                            <div style={{ fontSize: '0.72rem', color: 'rgba(255,240,200,0.45)', marginBottom: 4 }}>{card.shortName}</div>
+                          <div key={card.id} style={{ padding: '10px 12px', borderRadius: 12, background: 'var(--ri-card-bg)', border: '1px solid var(--ri-input-bg)' }}>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--ri-text-warm-muted)', marginBottom: 4 }}>{card.shortName}</div>
                             <div style={{ color: historySeverity?.color || 'white', fontWeight: 700 }}>{historyScore?.score ?? '--'} / {card.maxScore}</div>
                             {historySeverity && <div style={{ fontSize: '0.74rem', color: historySeverity.color, marginTop: 4 }}>{historySeverity.label}</div>}
                           </div>
@@ -586,26 +586,26 @@ export default function MoodDiaryCentre() {
               const barHeight = mood ? `${20 + mood.value * 14}%` : '12%'
               return (
                 <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }} title={mood ? `${day.entry.label} on ${day.ds}` : `No entry on ${day.ds}`}>
-                  <div style={{ width: '100%', height: 86, display: 'flex', alignItems: 'end', justifyContent: 'center', background: 'rgba(255,255,255,0.03)', borderRadius: 10, border: '1px solid rgba(255,255,255,0.06)', padding: 6 }}>
-                    <div style={{ width: '100%', height: barHeight, minHeight: 10, borderRadius: 8, background: mood ? mood.color : 'rgba(255,255,255,0.14)', opacity: mood ? 0.95 : 0.5, transition: 'height 0.2s' }} />
+                  <div style={{ width: '100%', height: 86, display: 'flex', alignItems: 'end', justifyContent: 'center', background: 'var(--ri-card-bg)', borderRadius: 10, border: '1px solid var(--ri-input-bg)', padding: 6 }}>
+                    <div style={{ width: '100%', height: barHeight, minHeight: 10, borderRadius: 8, background: mood ? mood.color : 'var(--ri-input-border)', opacity: mood ? 0.95 : 0.5, transition: 'height 0.2s' }} />
                   </div>
-                  <span style={{ fontSize: '0.68rem', color: 'rgba(255,240,200,0.45)' }}>{day.day}</span>
+                  <span style={{ fontSize: '0.68rem', color: 'var(--ri-text-warm-muted)' }}>{day.day}</span>
                 </div>
               )
             })}
           </div>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 14 }}>
-            <div style={{ flex: '1 1 180px', padding: '12px 14px', borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <p style={{ fontSize: '0.74rem', color: 'rgba(255,240,200,0.45)', marginBottom: 4 }}>Current streak</p>
-              <p style={{ color: 'white', fontSize: '1.05rem' }}>{streak} day{streak === 1 ? '' : 's'}</p>
+            <div style={{ flex: '1 1 180px', padding: '12px 14px', borderRadius: 12, background: 'var(--ri-card-bg)', border: '1px solid var(--ri-card-border)' }}>
+              <p style={{ fontSize: '0.74rem', color: 'var(--ri-text-warm-muted)', marginBottom: 4 }}>Current streak</p>
+              <p style={{ color: 'var(--ri-text-primary)', fontSize: '1.05rem' }}>{streak} day{streak === 1 ? '' : 's'}</p>
             </div>
-            <div style={{ flex: '1 1 180px', padding: '12px 14px', borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <p style={{ fontSize: '0.74rem', color: 'rgba(255,240,200,0.45)', marginBottom: 4 }}>Entries logged</p>
-              <p style={{ color: 'white', fontSize: '1.05rem' }}>{last30.filter(d => d.entry).length} / 30 days</p>
+            <div style={{ flex: '1 1 180px', padding: '12px 14px', borderRadius: 12, background: 'var(--ri-card-bg)', border: '1px solid var(--ri-card-border)' }}>
+              <p style={{ fontSize: '0.74rem', color: 'var(--ri-text-warm-muted)', marginBottom: 4 }}>Entries logged</p>
+              <p style={{ color: 'var(--ri-text-primary)', fontSize: '1.05rem' }}>{last30.filter(d => d.entry).length} / 30 days</p>
             </div>
-            <div style={{ flex: '1 1 180px', padding: '12px 14px', borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <p style={{ fontSize: '0.74rem', color: 'rgba(255,240,200,0.45)', marginBottom: 4 }}>Momentum</p>
+            <div style={{ flex: '1 1 180px', padding: '12px 14px', borderRadius: 12, background: 'var(--ri-card-bg)', border: '1px solid var(--ri-card-border)' }}>
+              <p style={{ fontSize: '0.74rem', color: 'var(--ri-text-warm-muted)', marginBottom: 4 }}>Momentum</p>
               <p style={{ color: trend > 0 ? '#10b981' : trend < 0 ? '#ef4444' : '#f59e0b', fontSize: '1.05rem' }}>
                 {trend > 0 ? 'Improving' : trend < 0 ? 'Needs support' : 'Stable'}
               </p>

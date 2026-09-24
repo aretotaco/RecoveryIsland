@@ -28,7 +28,7 @@ export default function RelaxationVilla() {
           icon: '🏯',
           title: 'A Trip to China',
           text: 'A serene guided journey through the peaceful landscapes of China. Let your mind wander and your body unwind.',
-          localVideoUrl: '/videos/Relaxation - Escape_A trip to China.mp4'
+          videoUrl: 'https://www.youtube.com/embed/lCKL3Cdgg34?rel=0&modestbranding=1'
         },
         {
           icon: '✨',

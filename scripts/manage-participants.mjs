@@ -49,6 +49,19 @@ async function createTemplate() {
   await workbook.xlsx.writeFile(filePath)
 }
 
+// A plain typed cell's .value is a string/number. A formula cell's .value is
+// an object ({ formula, result, ... }) even after Excel has evaluated it —
+// e.g. a dynamic array like ="P"&TEXT(SEQUENCE(100),"000") spilled down a
+// column. String(cell.value) on that object silently produces the literal
+// text "[object Object]" instead of the formula's result, so unwrap it here.
+function cellText(cell) {
+  const value = cell.value
+  if (value && typeof value === 'object' && 'result' in value) {
+    return String(value.result ?? '').trim()
+  }
+  return String(value || '').trim()
+}
+
 async function readParticipants() {
   const workbook = new ExcelJS.Workbook()
   await workbook.xlsx.readFile(filePath)
@@ -57,8 +70,8 @@ async function readParticipants() {
   const participants = []
   sheet.eachRow((row, rowNumber) => {
     if (rowNumber === 1) return // header row
-    const studyId = String(row.getCell(1).value || '').trim()
-    const password = String(row.getCell(2).value || '').trim()
+    const studyId = cellText(row.getCell(1))
+    const password = cellText(row.getCell(2))
     if (studyId && password) participants.push({ studyId, password })
   })
   return participants

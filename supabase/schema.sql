@@ -72,3 +72,28 @@ create policy "Entries are updatable by owner"
 on public.villa_entries for update
 using (auth.uid() = user_id)
 with check (auth.uid() = user_id);
+
+-- Append-only engagement log (villa visits, logins, feature saves/clicks) for
+-- the researcher dashboard's usage analytics. Deliberately separate from
+-- villa_entries: that table upserts by entry_key and only keeps the latest
+-- state per key, which would silently lose interaction counts.
+create table if not exists public.activity_events (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  event_type text not null,
+  villa text,
+  feature text,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+alter table public.activity_events enable row level security;
+
+-- Write-only from the participant's side: no select/update/delete policy, so
+-- a participant can insert events but never read, edit, or erase them even
+-- via the Supabase REST API directly. The dashboard/export reads this table
+-- server-side with the service_role key, which bypasses RLS.
+drop policy if exists "Events are insertable by owner" on public.activity_events;
+create policy "Events are insertable by owner"
+on public.activity_events for insert
+with check (auth.uid() = user_id);

@@ -18,7 +18,7 @@ export default function CrisisHud() {
         alignItems: 'center',
         gap: 8,
         border: '1px solid rgba(239,68,68,0.4)',
-        background: 'rgba(17,24,39,0.72)',
+        background: 'var(--ri-nav-pill-bg)',
         backdropFilter: 'blur(14px)',
         color: '#fca5a5',
         borderRadius: 999,

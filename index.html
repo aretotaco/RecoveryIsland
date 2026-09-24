@@ -5,6 +5,18 @@
     <link rel="icon" type="image/png" href="/assets/Recovery%20Island%20Logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Recovery Island</title>
+    <script>
+      // Sets the theme attribute before first paint so there's no flash of
+      // the wrong theme — React (and ThemeContext) can't run early enough.
+      (function () {
+        try {
+          var theme = localStorage.getItem('ri_theme')
+          if (theme === 'light' || theme === 'dark') {
+            document.documentElement.dataset.theme = theme
+          }
+        } catch (e) {}
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

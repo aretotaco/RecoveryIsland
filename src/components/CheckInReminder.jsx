@@ -66,8 +66,8 @@ export default function CheckInReminder() {
       position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 45,
       display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', justifyContent: 'center',
       maxWidth: 'min(92vw, 520px)', padding: '12px 18px', borderRadius: 16,
-      background: 'rgba(17,24,39,0.85)', backdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,0.1)',
-      color: 'white', fontSize: '0.85rem', boxShadow: '0 20px 50px rgba(0,0,0,0.35)',
+      background: 'var(--ri-nav-pill-bg)', backdropFilter: 'blur(14px)', border: '1px solid var(--ri-card-border)',
+      color: 'var(--ri-text-primary)', fontSize: '0.85rem', boxShadow: '0 20px 50px rgba(0,0,0,0.35)',
     }}>
       <span>🌤️ Haven't checked in today yet.</span>
       <button
@@ -79,12 +79,12 @@ export default function CheckInReminder() {
       {notificationsSupported() && permission === 'default' && (
         <button
           onClick={enableReminders}
-          style={{ padding: '7px 14px', borderRadius: 999, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.75)', cursor: 'pointer' }}
+          style={{ padding: '7px 14px', borderRadius: 999, border: '1px solid var(--ri-input-border)', background: 'var(--ri-input-bg)', color: 'var(--ri-text-secondary)', cursor: 'pointer' }}
         >
           Enable reminders
         </button>
       )}
-      <button onClick={dismiss} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '1rem', padding: '0 4px' }} aria-label="Dismiss">
+      <button onClick={dismiss} style={{ background: 'none', border: 'none', color: 'var(--ri-text-muted)', cursor: 'pointer', fontSize: '1rem', padding: '0 4px' }} aria-label="Dismiss">
         ×
       </button>
     </div>

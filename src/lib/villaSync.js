@@ -1,6 +1,20 @@
 import { fetchVillaEntries, requireSupabase, upsertProfile, upsertVillaEntry } from './supabase'
+import { trackEvent } from './activityTracking'
 
 const PENDING_KEY = 'ri_pending_sync'
+
+// Maps a villa_entries `category` to the villa/page it's saved from, so the
+// researcher dashboard can group usage by villa without every call site
+// having to know or pass that itself. `assessment` maps to mood-diary since
+// Emotion Scales is only ever reached from the Mood Diary Centre.
+const CATEGORY_TO_VILLA = {
+  concierge: 'concierge',
+  mood: 'mood-diary',
+  journal: 'mood-diary',
+  assessment: 'mood-diary',
+  wellness: 'wellness',
+  inspiration: 'inspiration',
+}
 
 function todayKey() {
   return new Date().toDateString()
@@ -56,6 +70,12 @@ export async function syncProfile(profile) {
 
 export async function syncEntry({ category, source, payload, entryKey, entryDate }) {
   const entry = { category, source, payload, entryKey, entryDate: entryDate || todayKey() }
+
+  // Count the click itself, independent of whether the write below succeeds —
+  // the participant still did the thing, and this covers ~15 already-synced
+  // actions (mood save, journal save, assessment submit, sleep log, etc.)
+  // from this single hook instead of touching every component.
+  trackEvent('feature_submit', { villa: CATEGORY_TO_VILLA[category], feature: source })
 
   let client
   try {

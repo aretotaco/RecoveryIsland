@@ -1,4 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
+import { trackEvent } from '../lib/activityTracking'
+
+// pattern -> villa is a closed set (box breathing lives on Mindfulness,
+// 4-7-8 on Relaxation), so this stays self-contained instead of needing a
+// villa prop threaded through from every page that renders the pacer.
+const PATTERN_VILLA = { box: 'mindfulness', 478: 'relaxation' }
 
 const PATTERNS = {
   box: {
@@ -85,25 +91,28 @@ export default function BreathingPacer({ pattern = 'box' }) {
         <p style={{ color: config.color, fontSize: '1.1rem', fontWeight: 600, letterSpacing: 1 }}>
           {running ? step.label : 'Ready when you are'}
         </p>
-        <p style={{ color: 'rgba(255,240,200,0.45)', fontSize: '0.78rem', marginTop: 4 }}>
+        <p style={{ color: 'var(--ri-text-warm-muted)', fontSize: '0.78rem', marginTop: 4 }}>
           {config.name} · {state.cycles} {state.cycles === 1 ? 'cycle' : 'cycles'} completed
         </p>
       </div>
 
-      <p style={{ color: 'rgba(255,240,200,0.5)', fontSize: '0.8rem', lineHeight: 1.6, textAlign: 'center', maxWidth: 340 }}>
+      <p style={{ color: 'var(--ri-text-warm-muted)', fontSize: '0.8rem', lineHeight: 1.6, textAlign: 'center', maxWidth: 340 }}>
         {config.desc}
       </p>
 
       <div style={{ display: 'flex', gap: 10 }}>
         <button
-          onClick={() => setRunning(r => !r)}
+          onClick={() => setRunning(r => {
+            if (!r) trackEvent('feature_click', { villa: PATTERN_VILLA[pattern], feature: 'breathing-pacer' })
+            return !r
+          })}
           style={{ padding: '10px 24px', borderRadius: 999, border: 'none', background: config.color, color: 'white', fontWeight: 600, cursor: 'pointer' }}
         >
           {running ? 'Pause' : state.cycles > 0 || state.stepIndex > 0 ? 'Resume' : 'Start'}
         </button>
         <button
           onClick={reset}
-          style={{ padding: '10px 20px', borderRadius: 999, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,240,200,0.7)', cursor: 'pointer' }}
+          style={{ padding: '10px 20px', borderRadius: 999, border: '1px solid var(--ri-input-border)', background: 'var(--ri-card-bg)', color: 'var(--ri-text-warm-secondary)', cursor: 'pointer' }}
         >
           Reset
         </button>

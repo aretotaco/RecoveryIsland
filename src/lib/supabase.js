@@ -77,6 +77,21 @@ export async function upsertVillaEntry({ userId, category, source, entryDate, en
   return data
 }
 
+export async function insertActivityEvent({ userId, eventType, villa, feature, metadata }) {
+  const client = requireSupabase()
+  const { error } = await client
+    .from('activity_events')
+    .insert({
+      user_id: userId,
+      event_type: eventType,
+      villa: villa || null,
+      feature: feature || null,
+      metadata: metadata || {},
+    })
+
+  if (error) throw error
+}
+
 export async function fetchVillaEntries({ userId, category, source, limit = 100 } = {}) {
   const client = requireSupabase()
   let query = client

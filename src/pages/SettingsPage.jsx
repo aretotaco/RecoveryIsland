@@ -54,21 +54,21 @@ export default function SettingsPage() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16 }}>
             <button className="card-btn" onClick={saveProfile}>Save Maia</button>
-            {profileStatus && <span style={{ color: 'rgba(255,240,200,0.6)', fontSize: '0.85rem' }}>{profileStatus}</span>}
+            {profileStatus && <span style={{ color: 'var(--ri-text-warm-secondary)', fontSize: '0.85rem' }}>{profileStatus}</span>}
           </div>
         </div>
 
         <div className="villa-card">
           <div className="card-icon">🪪</div>
           <h3 className="card-title">Study ID</h3>
-          <p className="card-text">You're signed in as <strong style={{ color: 'white' }}>{user?.studyId}</strong>. Your Study ID and password are set by the study team and can't be changed here — contact them if you need help signing in.</p>
+          <p className="card-text">You're signed in as <strong style={{ color: 'var(--ri-text-primary)' }}>{user?.studyId}</strong>. Your Study ID and password are set by the study team and can't be changed here — contact them if you need help signing in.</p>
         </div>
 
         <div className="villa-card">
           <div className="card-icon"></div>
           <h3 className="card-title">Sign out</h3>
           <p className="card-text">You can always come back — your data stays saved.</p>
-          <button className="card-btn" style={{ background: 'rgba(255,255,255,0.12)' }} onClick={() => { logout(); navigate('/login') }}>
+          <button className="card-btn" style={{ background: 'var(--ri-input-border)' }} onClick={() => { logout(); navigate('/login') }}>
             Log out
           </button>
         </div>

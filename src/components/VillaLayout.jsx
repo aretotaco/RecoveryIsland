@@ -1,5 +1,7 @@
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MaiaGuide from './MaiaGuide'
+import { trackEvent } from '../lib/activityTracking'
 
 function normalizeVideoUrl(url) {
   if (!url) return ''
@@ -30,6 +32,9 @@ function normalizeVideoUrl(url) {
   return ''
 }
 
+// AI Companion (id 7) is deliberately left out of the prev/next nav order —
+// it's not ready yet, so Inspiration Villa's "next" button doesn't lead
+// there. See IslandMap's `comingSoon` flag for the map-side treatment.
 const VILLA_ORDER = [
   { id: 1, path: '/concierge', name: 'Concierge Villa', emoji: '\u{1F3DD}' },
   { id: 2, path: '/mood-diary', name: 'Mood Diary Centre', emoji: '\u{1F4D3}' },
@@ -37,7 +42,6 @@ const VILLA_ORDER = [
   { id: 4, path: '/relaxation', name: 'Relaxation Villa', emoji: '\u{1F33F}' },
   { id: 5, path: '/wellness', name: 'Wellness Villa', emoji: '\u{1F49A}' },
   { id: 6, path: '/inspiration', name: 'Inspiration Villa', emoji: '✨' },
-  { id: 7, path: '/ai-chatbot', name: 'AI Companion', emoji: '\u{1F916}' },
 ]
 
 export default function VillaLayout({ villa }) {
@@ -46,6 +50,14 @@ export default function VillaLayout({ villa }) {
   const currentIdx = VILLA_ORDER.findIndex(v => v.id === villa.id)
   const prevVilla = currentIdx > 0 ? VILLA_ORDER[currentIdx - 1] : null
   const nextVilla = currentIdx >= 0 && currentIdx < VILLA_ORDER.length - 1 ? VILLA_ORDER[currentIdx + 1] : null
+
+  useEffect(() => {
+    const slug = VILLA_ORDER.find(v => v.id === villa.id)?.path?.slice(1)
+    // feature: 'page-view' (not the villa slug again) so the dashboard's
+    // feature-usage list reads as "Mindfulness Villa — page-view" rather
+    // than the redundant "Mindfulness Villa — mindfulness".
+    trackEvent('villa_view', { villa: slug, feature: 'page-view' })
+  }, [villa.id])
 
   return (
     <div className="villa-page" style={vs}>
@@ -90,7 +102,7 @@ export default function VillaLayout({ villa }) {
                   href={section.videoUrl}
                   target="_blank"
                   rel="noreferrer"
-                  style={{ display: 'inline-block', marginTop: 10, color: 'rgba(255,240,200,0.75)', fontSize: '0.82rem' }}
+                  style={{ display: 'inline-block', marginTop: 10, color: 'var(--ri-text-warm-secondary)', fontSize: '0.82rem' }}
                 >
                   If YouTube blocks the embed, open this video on YouTube.
                 </a>
@@ -104,12 +116,12 @@ export default function VillaLayout({ villa }) {
               )}
               {section.script && (
                 <div style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'var(--ri-card-bg)',
+                  border: '1px solid var(--ri-card-border)',
                   borderRadius: 14,
                   padding: '18px 20px',
                   marginTop: 14,
-                  color: 'rgba(255,240,200,0.75)',
+                  color: 'var(--ri-text-warm-secondary)',
                   fontSize: '0.88rem',
                   lineHeight: 1.9,
                   whiteSpace: 'pre-line',

@@ -156,7 +156,7 @@ function ScaleSection({ scale, allAnswers, onChange }) {
 
           {complete && severity && (
             <div className="es-section-score" style={{ borderColor: severity.color + '55', background: severity.color + '11' }}>
-              <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14 }}>Section score:</span>
+              <span style={{ color: 'var(--ri-text-secondary)', fontSize: 14 }}>Section score:</span>
               <span style={{ color: severity.color, fontWeight: 600, fontSize: 15 }}>
                 {score}/{scale.maxScore}
               </span>

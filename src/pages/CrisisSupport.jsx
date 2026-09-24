@@ -89,7 +89,7 @@ export default function CrisisSupport() {
                 style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '10px 18px', borderRadius: 12, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', color: 'white', textDecoration: 'none' }}
               >
                 <strong style={{ fontSize: '1.1rem' }}>{e.num}</strong>
-                <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)' }}>{e.label}</span>
+                <span style={{ fontSize: '0.72rem', color: 'var(--ri-text-secondary)' }}>{e.label}</span>
               </a>
             ))}
           </div>
@@ -100,10 +100,10 @@ export default function CrisisSupport() {
           <h3 className="card-title">Singapore support hotlines</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
             {HOTLINES.map(l => (
-              <div key={l.name} style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div key={l.name} style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 12, background: 'var(--ri-card-bg)', border: '1px solid var(--ri-card-border)' }}>
                 <div>
-                  <p style={{ color: 'white', fontSize: '0.9rem', fontWeight: 600 }}>{l.name}</p>
-                  <p style={{ color: 'rgba(255,240,200,0.5)', fontSize: '0.78rem', marginTop: 2 }}>{l.detail}</p>
+                  <p style={{ color: 'var(--ri-text-primary)', fontSize: '0.9rem', fontWeight: 600 }}>{l.name}</p>
+                  <p style={{ color: 'var(--ri-text-warm-muted)', fontSize: '0.78rem', marginTop: 2 }}>{l.detail}</p>
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
                   {l.tel && (
@@ -144,7 +144,7 @@ export default function CrisisSupport() {
           </div>
         </div>
 
-        <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: 'rgba(255,240,200,0.35)', fontSize: '0.75rem', padding: '0 16px' }}>
+        <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: 'var(--ri-text-warm-muted)', fontSize: '0.75rem', padding: '0 16px' }}>
           These numbers were accurate at the time this page was built. If a line isn't reachable, IMH's Emergency Room (24 hours) is always an option.
         </p>
       </div>

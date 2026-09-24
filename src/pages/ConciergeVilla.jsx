@@ -79,13 +79,13 @@ export default function ConciergeVilla() {
           {wizStep === 0 && (
             <div className="villa-card" style={{ maxWidth: 520, textAlign: 'center' }}>
               <div style={{ fontSize: 56, marginBottom: 8 }}>🏝</div>
-              <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '2rem', fontWeight: 300, color: 'white', letterSpacing: 3, marginBottom: 12 }}>
+              <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '2rem', fontWeight: 300, color: 'var(--ri-text-primary)', letterSpacing: 3, marginBottom: 12 }}>
                 Welcome to Recovery Island
               </h1>
-              <p style={{ color: 'rgba(255,255,255,0.75)', lineHeight: 1.8, marginBottom: 10 }}>
+              <p style={{ color: 'var(--ri-text-secondary)', lineHeight: 1.8, marginBottom: 10 }}>
                 A gentle, judgement-free space for anyone facing challenges — stress, anxiety, low mood, or simply needing a reset.
               </p>
-              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', lineHeight: 1.7, marginBottom: 28 }}>
+              <p style={{ color: 'var(--ri-text-muted)', fontSize: '0.9rem', lineHeight: 1.7, marginBottom: 28 }}>
                 Before you explore, create your personal companion — Maia. She will guide you through the island.
               </p>
               <button className="card-btn" style={{ padding: '12px 32px', fontSize: '1rem' }} onClick={() => setWizStep(1)}>
@@ -96,15 +96,15 @@ export default function ConciergeVilla() {
 
           {wizStep === 1 && (
             <div className="villa-card" style={{ maxWidth: 560, width: '100%' }}>
-              <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.5rem', fontWeight: 600, color: 'white', textAlign: 'center', marginBottom: 6 }}>
+              <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.5rem', fontWeight: 600, color: 'var(--ri-text-primary)', textAlign: 'center', marginBottom: 6 }}>
                 Customise Maia
               </h2>
-              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', textAlign: 'center', marginBottom: 18 }}>
+              <p style={{ color: 'var(--ri-text-muted)', fontSize: '0.85rem', textAlign: 'center', marginBottom: 18 }}>
                 Make her your own — she will appear throughout the island.
               </p>
               <MaiaAvatarBuilder config={avatarCfg} onChange={cfg => { setAvatarCfg(cfg); saveMaiaAvatar(cfg) }} />
               <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'center' }}>
-                <button className="card-btn" style={{ background: 'rgba(255,255,255,0.12)', fontSize: '0.9rem' }} onClick={() => setWizStep(0)}>Back</button>
+                <button className="card-btn" style={{ background: 'var(--ri-input-border)', fontSize: '0.9rem' }} onClick={() => setWizStep(0)}>Back</button>
                 <button className="card-btn" style={{ fontSize: '0.9rem', padding: '11px 28px' }} onClick={finishWizard}>
                   Enter the Island
                 </button>
@@ -134,7 +134,7 @@ export default function ConciergeVilla() {
         <p className="villa-subtitle">Your guide to Recovery Island. Explore at your own pace.</p>
         <button
           onClick={() => { setWizStep(1); setEditing(true) }}
-          style={{ marginTop: 10, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.6)', borderRadius: 999, padding: '6px 18px', cursor: 'pointer', fontSize: '0.8rem' }}
+          style={{ marginTop: 10, background: 'var(--ri-card-border)', border: '1px solid var(--ri-card-bg-hover)', color: 'var(--ri-text-secondary)', borderRadius: 999, padding: '6px 18px', cursor: 'pointer', fontSize: '0.8rem' }}
         >
           Customise Maia
         </button>
@@ -146,7 +146,7 @@ export default function ConciergeVilla() {
           <div className="card-icon">🗺</div>
           <h3 className="card-title">How Recovery Island works</h3>
           <p className="card-text">Six destinations, each supporting a different part of your wellbeing journey.</p>
-          <div style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 14, padding: '14px 18px', marginTop: 12, color: 'rgba(255,255,255,0.85)', lineHeight: 1.7, fontSize: '0.92rem' }}>
+          <div style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 14, padding: '14px 18px', marginTop: 12, color: 'var(--ri-text-primary)', lineHeight: 1.7, fontSize: '0.92rem' }}>
             Visit the <strong>Mood Diary Centre first</strong> to log your baseline. Explore the villas. When done, <strong>return to compare</strong> how you feel.
           </div>
         </div>
@@ -165,9 +165,9 @@ export default function ConciergeVilla() {
               return (
                 <button key={v.path} onClick={() => markVisited(v.path)} style={{
                   display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderRadius: 14,
-                  border: done ? '1.5px solid rgba(74,222,128,0.45)' : v.recommended ? '1.5px solid rgba(245,158,11,0.5)' : '1.5px solid rgba(255,255,255,0.1)',
-                  background: done ? 'rgba(74,222,128,0.07)' : v.recommended ? 'rgba(245,158,11,0.08)' : 'rgba(255,255,255,0.04)',
-                  cursor: 'pointer', textAlign: 'left', color: 'white', transition: 'all 0.2s',
+                  border: done ? '1.5px solid rgba(74,222,128,0.45)' : v.recommended ? '1.5px solid rgba(245,158,11,0.5)' : '1.5px solid var(--ri-card-border)',
+                  background: done ? 'rgba(74,222,128,0.07)' : v.recommended ? 'rgba(245,158,11,0.08)' : 'var(--ri-card-bg)',
+                  cursor: 'pointer', textAlign: 'left', color: 'var(--ri-text-primary)', transition: 'all 0.2s',
                 }}>
                   <span style={{ fontSize: 24, flexShrink: 0 }}>{done ? '✅' : v.emoji}</span>
                   <div style={{ flex: 1 }}>
@@ -175,9 +175,9 @@ export default function ConciergeVilla() {
                       {v.label}
                       {v.recommended && !done && <span style={{ fontSize: '0.68rem', background: '#f59e0b', color: '#1a1a2e', borderRadius: 6, padding: '2px 7px', fontWeight: 700 }}>START HERE</span>}
                     </div>
-                    <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>{v.note}</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--ri-text-muted)', marginTop: 2 }}>{v.note}</div>
                   </div>
-                  <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '1rem' }}>→</span>
+                  <span style={{ color: 'var(--ri-text-muted)', fontSize: '1rem' }}>→</span>
                 </button>
               )
             })}
@@ -200,13 +200,13 @@ export default function ConciergeVilla() {
           <div className="card-icon">📊</div>
           <h3 className="card-title">Your progress</h3>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 8 }}>
-            <div style={{ flex: 1, height: 10, borderRadius: 999, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+            <div style={{ flex: 1, height: 10, borderRadius: 999, background: 'var(--ri-card-border)', overflow: 'hidden' }}>
               <div style={{ height: '100%', width: `${(visited.length / VILLAS.length) * 100}%`, background: 'linear-gradient(90deg, #f59e0b, #fcd34d)', borderRadius: 999, transition: 'width 0.5s ease' }} />
             </div>
-            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', flexShrink: 0 }}>{visited.length} / {VILLAS.length}</span>
+            <span style={{ color: 'var(--ri-text-secondary)', fontSize: '0.85rem', flexShrink: 0 }}>{visited.length} / {VILLAS.length}</span>
           </div>
-          {!moodVisited && <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.82rem', marginTop: 10 }}>Visit Mood Diary Centre first to set your baseline mood.</p>}
-          {moodVisited && !allVisited && <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.82rem', marginTop: 10 }}>Great start. Explore the remaining villas, then return to compare.</p>}
+          {!moodVisited && <p style={{ color: 'var(--ri-text-muted)', fontSize: '0.82rem', marginTop: 10 }}>Visit Mood Diary Centre first to set your baseline mood.</p>}
+          {moodVisited && !allVisited && <p style={{ color: 'var(--ri-text-muted)', fontSize: '0.82rem', marginTop: 10 }}>Great start. Explore the remaining villas, then return to compare.</p>}
           {allVisited && <p style={{ color: '#4ade80', fontSize: '0.82rem', marginTop: 10 }}>You have completed the full island journey.</p>}
         </div>
       </div>

@@ -80,14 +80,20 @@ const villas = [
     emoji: '🤖',
     color: '#6366f1',
     description: 'Your wellness companion',
-    labelSide: 'below'
+    labelSide: 'below',
+    comingSoon: true
   },
 ]
 
-function VillaBuilding({ x, y, color, isHovered }) {
+function VillaBuilding({ x, y, color, isHovered, comingSoon }) {
   const s = isHovered ? 1.1 : 1
   return (
-    <g transform={`translate(${x}, ${y}) scale(${s})`} style={{ transition: 'all 0.25s ease' }}>
+    <g
+      transform={`translate(${x}, ${y}) scale(${s})`}
+      style={{ transition: 'all 0.25s ease' }}
+      opacity={comingSoon ? 0.55 : 1}
+      filter={comingSoon ? 'url(#desaturate)' : undefined}
+    >
       <ellipse cx="0" cy="5.5" rx="6.5" ry="1.5" fill="rgba(0,0,0,0.2)" />
       <rect x="-5" y="-3.5" width="10" height="8" rx="0.5" fill="#f5f0e8" />
       <rect x="3.5" y="-3.5" width="1.5" height="8" fill="rgba(0,0,0,0.07)" />
@@ -144,16 +150,38 @@ function VillaLabel({ villa, isHovered }) {
     rx = villa.x - pillW / 2
     ry = villa.y + 8
   }
+  const label = villa.comingSoon ? `🔒 ${villa.name}` : villa.name
   return (
-    <g>
+    <g opacity={villa.comingSoon ? 0.75 : 1}>
       <rect x={rx} y={ry} width={pillW} height={pillH} rx="2.5"
-        fill={isHovered ? villa.color : 'rgba(0,0,0,0.55)'}
+        fill={villa.comingSoon ? 'rgba(30,25,15,0.7)' : (isHovered ? villa.color : 'rgba(0,0,0,0.55)')}
+        stroke={villa.comingSoon ? '#fbbf24' : 'none'}
+        strokeWidth={villa.comingSoon ? 0.3 : 0}
+        strokeDasharray={villa.comingSoon ? '1,0.8' : undefined}
         style={{ transition: 'all 0.25s ease' }} />
       <text x={rx + pillW / 2} y={ry + 3.6} textAnchor="middle"
-        fontSize="2.4" fontWeight="600" fill="white"
+        fontSize="2.2" fontWeight="600" fill="white"
         fontFamily="Jost, sans-serif" letterSpacing="0.1"
         style={{ pointerEvents: 'none', userSelect: 'none' }}>
-        {villa.name}
+        {label}
+      </text>
+    </g>
+  )
+}
+
+// Barricades a villa that isn't ready yet: crossed hazard-tape bands over the
+// building, plus a flat "coming soon" badge layered on top of the tape at
+// the same center point. Kept flat (not rotated with the tape) so the text
+// stays readable, and kept centered on the *building* — well above the
+// villa name pill, which sits further below — so nothing overlaps it.
+function ConstructionOverlay({ x, y }) {
+  return (
+    <g transform={`translate(${x}, ${y - 1.5})`} style={{ pointerEvents: 'none' }}>
+      <rect x="-8" y="-1.1" width="16" height="2.2" rx="0.25" fill="url(#hazardStripes)" stroke="#111827" strokeWidth="0.18" transform="rotate(-16)" opacity="0.95" />
+      <rect x="-8" y="-1.1" width="16" height="2.2" rx="0.25" fill="url(#hazardStripes)" stroke="#111827" strokeWidth="0.18" transform="rotate(16)" opacity="0.95" />
+      <rect x="-9.5" y="-1.6" width="19" height="3.2" rx="1.1" fill="#1f2937" stroke="#fbbf24" strokeWidth="0.3" />
+      <text x="0" y="0.6" textAnchor="middle" fontSize="1.7" fontWeight="800" fill="#fbbf24" fontFamily="Jost, sans-serif" letterSpacing="0.03">
+        🚧 COMING SOON
       </text>
     </g>
   )
@@ -543,6 +571,13 @@ export default function IslandMap() {
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
+            <filter id="desaturate">
+              <feColorMatrix type="saturate" values="0.25" />
+            </filter>
+            <pattern id="hazardStripes" width="2.4" height="2.4" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+              <rect width="2.4" height="2.4" fill="#f59e0b" />
+              <rect width="1.2" height="2.4" fill="#111827" />
+            </pattern>
           </defs>
 
           {/* ── Water shimmer patches ── */}
@@ -794,13 +829,14 @@ export default function IslandMap() {
             return (
               <g
                 key={villa.id}
-                onClick={() => navigate(villa.path)}
+                onClick={() => { if (!villa.comingSoon) navigate(villa.path) }}
                 onMouseEnter={() => setHovered(villa.id)}
                 onMouseLeave={() => setHovered(null)}
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: villa.comingSoon ? 'not-allowed' : 'pointer' }}
               >
-                <VillaBuilding x={villa.x} y={villa.y} color={villa.color} isHovered={isHovered} />
-                <VillaLabel villa={villa} isHovered={isHovered} />
+                <VillaBuilding x={villa.x} y={villa.y} color={villa.color} isHovered={isHovered && !villa.comingSoon} comingSoon={villa.comingSoon} />
+                {villa.comingSoon && <ConstructionOverlay x={villa.x} y={villa.y} />}
+                <VillaLabel villa={villa} isHovered={isHovered && !villa.comingSoon} />
               </g>
             )
           })}
@@ -812,11 +848,13 @@ export default function IslandMap() {
       {hovered && (() => {
         const villa = villas.find(v => v.id === hovered)
         return (
-          <div className="villa-tooltip">
-            <div className="tooltip-emoji">{villa.emoji}</div>
+          <div className={`villa-tooltip${villa.comingSoon ? ' villa-tooltip--soon' : ''}`}>
+            <div className="tooltip-emoji">{villa.comingSoon ? '🚧' : villa.emoji}</div>
             <div className="tooltip-name">{villa.name}</div>
-            <div className="tooltip-desc">{villa.description}</div>
-            <div className="tooltip-cta">Click to enter →</div>
+            <div className="tooltip-desc">
+              {villa.comingSoon ? "We're still building this space — check back soon!" : villa.description}
+            </div>
+            <div className="tooltip-cta">{villa.comingSoon ? 'Coming soon' : 'Click to enter →'}</div>
           </div>
         )
       })()}

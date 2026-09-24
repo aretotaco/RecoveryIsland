@@ -402,9 +402,9 @@ function SwatchBtn({ selected, onClick, children, size = 40 }) {
       onClick={onClick}
       style={{
         width: size, height: size,
-        border: selected ? '2.5px solid #f59e0b' : '2px solid rgba(255,255,255,0.15)',
+        border: selected ? '2.5px solid #f59e0b' : '2px solid var(--ri-input-border)',
         borderRadius: 10,
-        background: selected ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.06)',
+        background: selected ? 'rgba(245,158,11,0.2)' : 'var(--ri-input-bg)',
         cursor: 'pointer',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         transition: 'all 0.18s',
@@ -440,9 +440,9 @@ export function MaiaAvatarBuilder({ config, onChange }) {
             style={{
               padding: '6px 14px',
               borderRadius: 999,
-              border: step === i ? '1.5px solid #f59e0b' : '1.5px solid rgba(255,255,255,0.15)',
-              background: step === i ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.05)',
-              color: step === i ? '#fbbf24' : 'rgba(255,255,255,0.55)',
+              border: step === i ? '1.5px solid #f59e0b' : '1.5px solid var(--ri-input-border)',
+              background: step === i ? 'rgba(245,158,11,0.2)' : 'var(--ri-card-bg)',
+              color: step === i ? '#fbbf24' : 'var(--ri-text-secondary)',
               fontSize: '0.78rem',
               cursor: 'pointer',
               fontWeight: step === i ? 600 : 400,
@@ -455,8 +455,8 @@ export function MaiaAvatarBuilder({ config, onChange }) {
       </div>
 
       {/* Step panel */}
-      <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: '16px 18px', border: '1px solid rgba(255,255,255,0.1)' }}>
-        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', marginBottom: 14, letterSpacing: '0.05em', textTransform: 'uppercase' }}>{current.subtitle}</p>
+      <div style={{ background: 'var(--ri-card-bg)', borderRadius: 16, padding: '16px 18px', border: '1px solid var(--ri-card-border)' }}>
+        <p style={{ color: 'var(--ri-text-muted)', fontSize: '0.8rem', marginBottom: 14, letterSpacing: '0.05em', textTransform: 'uppercase' }}>{current.subtitle}</p>
 
         {/* SKIN */}
         {step === 0 && (
@@ -473,25 +473,25 @@ export function MaiaAvatarBuilder({ config, onChange }) {
         {step === 1 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div>
-              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', marginBottom: 8 }}>STYLE</p>
+              <p style={{ color: 'var(--ri-text-muted)', fontSize: '0.75rem', marginBottom: 8 }}>STYLE</p>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {HAIR_STYLES.map(h => (
                   <button key={h.id} onClick={() => set('hairStyle', h.id)} style={{
                     padding: '7px 14px', borderRadius: 999,
-                    border: config.hairStyle === h.id ? '1.5px solid #f59e0b' : '1.5px solid rgba(255,255,255,0.15)',
-                    background: config.hairStyle === h.id ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.05)',
-                    color: config.hairStyle === h.id ? '#fbbf24' : 'rgba(255,255,255,0.65)',
+                    border: config.hairStyle === h.id ? '1.5px solid #f59e0b' : '1.5px solid var(--ri-input-border)',
+                    background: config.hairStyle === h.id ? 'rgba(245,158,11,0.2)' : 'var(--ri-card-bg)',
+                    color: config.hairStyle === h.id ? '#fbbf24' : 'var(--ri-text-secondary)',
                     fontSize: '0.82rem', cursor: 'pointer', transition: 'all 0.18s',
                   }}>{h.name}</button>
                 ))}
               </div>
             </div>
             <div>
-              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', marginBottom: 8 }}>COLOUR</p>
+              <p style={{ color: 'var(--ri-text-muted)', fontSize: '0.75rem', marginBottom: 8 }}>COLOUR</p>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {HAIR_COLORS.map(h => (
                   <SwatchBtn key={h.id} selected={config.hairColor === h.id} onClick={() => set('hairColor', h.id)} size={40}>
-                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: h.color, border: '1.5px solid rgba(255,255,255,0.15)' }} title={h.name} />
+                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: h.color, border: '1.5px solid var(--ri-input-border)' }} title={h.name} />
                   </SwatchBtn>
                 ))}
               </div>
@@ -503,25 +503,25 @@ export function MaiaAvatarBuilder({ config, onChange }) {
         {step === 2 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div>
-              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', marginBottom: 8 }}>SHAPE</p>
+              <p style={{ color: 'var(--ri-text-muted)', fontSize: '0.75rem', marginBottom: 8 }}>SHAPE</p>
               <div style={{ display: 'flex', gap: 8 }}>
                 {EYE_SHAPES.map(e => (
                   <button key={e.id} onClick={() => set('eyeShape', e.id)} style={{
                     padding: '7px 16px', borderRadius: 999,
-                    border: config.eyeShape === e.id ? '1.5px solid #f59e0b' : '1.5px solid rgba(255,255,255,0.15)',
-                    background: config.eyeShape === e.id ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.05)',
-                    color: config.eyeShape === e.id ? '#fbbf24' : 'rgba(255,255,255,0.65)',
+                    border: config.eyeShape === e.id ? '1.5px solid #f59e0b' : '1.5px solid var(--ri-input-border)',
+                    background: config.eyeShape === e.id ? 'rgba(245,158,11,0.2)' : 'var(--ri-card-bg)',
+                    color: config.eyeShape === e.id ? '#fbbf24' : 'var(--ri-text-secondary)',
                     fontSize: '0.82rem', cursor: 'pointer', transition: 'all 0.18s',
                   }}>{e.name}</button>
                 ))}
               </div>
             </div>
             <div>
-              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', marginBottom: 8 }}>COLOUR</p>
+              <p style={{ color: 'var(--ri-text-muted)', fontSize: '0.75rem', marginBottom: 8 }}>COLOUR</p>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {EYE_COLORS.map(e => (
                   <SwatchBtn key={e.id} selected={config.eyeColor === e.id} onClick={() => set('eyeColor', e.id)} size={40}>
-                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: e.color, border: '1.5px solid rgba(255,255,255,0.15)' }} title={e.name} />
+                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: e.color, border: '1.5px solid var(--ri-input-border)' }} title={e.name} />
                   </SwatchBtn>
                 ))}
               </div>
@@ -533,21 +533,21 @@ export function MaiaAvatarBuilder({ config, onChange }) {
         {step === 3 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div>
-              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', marginBottom: 8 }}>STYLE</p>
+              <p style={{ color: 'var(--ri-text-muted)', fontSize: '0.75rem', marginBottom: 8 }}>STYLE</p>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {OUTFITS.map(o => (
                   <button key={o.id} onClick={() => set('outfit', o.id)} style={{
                     padding: '7px 14px', borderRadius: 999,
-                    border: config.outfit === o.id ? '1.5px solid #f59e0b' : '1.5px solid rgba(255,255,255,0.15)',
-                    background: config.outfit === o.id ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.05)',
-                    color: config.outfit === o.id ? '#fbbf24' : 'rgba(255,255,255,0.65)',
+                    border: config.outfit === o.id ? '1.5px solid #f59e0b' : '1.5px solid var(--ri-input-border)',
+                    background: config.outfit === o.id ? 'rgba(245,158,11,0.2)' : 'var(--ri-card-bg)',
+                    color: config.outfit === o.id ? '#fbbf24' : 'var(--ri-text-secondary)',
                     fontSize: '0.82rem', cursor: 'pointer', transition: 'all 0.18s',
                   }}>{o.name}</button>
                 ))}
               </div>
             </div>
             <div>
-              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', marginBottom: 8 }}>COLOUR</p>
+              <p style={{ color: 'var(--ri-text-muted)', fontSize: '0.75rem', marginBottom: 8 }}>COLOUR</p>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {OUTFIT_COLORS.map(o => (
                   <SwatchBtn key={o.id} selected={config.outfitColor === o.id} onClick={() => set('outfitColor', o.id)} size={40}>
@@ -566,9 +566,9 @@ export function MaiaAvatarBuilder({ config, onChange }) {
               <button key={a.id} onClick={() => set('accessory', a.id)} style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
                 padding: '10px 14px', borderRadius: 12,
-                border: config.accessory === a.id ? '1.5px solid #f59e0b' : '1.5px solid rgba(255,255,255,0.15)',
-                background: config.accessory === a.id ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.05)',
-                color: config.accessory === a.id ? '#fbbf24' : 'rgba(255,255,255,0.65)',
+                border: config.accessory === a.id ? '1.5px solid #f59e0b' : '1.5px solid var(--ri-input-border)',
+                background: config.accessory === a.id ? 'rgba(245,158,11,0.2)' : 'var(--ri-card-bg)',
+                color: config.accessory === a.id ? '#fbbf24' : 'var(--ri-text-secondary)',
                 fontSize: '0.78rem', cursor: 'pointer', transition: 'all 0.18s',
                 minWidth: 70,
               }}>
@@ -587,21 +587,21 @@ export function MaiaAvatarBuilder({ config, onChange }) {
           disabled={step === 0}
           style={{
             padding: '8px 18px', borderRadius: 999,
-            border: '1.5px solid rgba(255,255,255,0.15)',
-            background: 'rgba(255,255,255,0.05)',
-            color: step === 0 ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.7)',
+            border: '1.5px solid var(--ri-input-border)',
+            background: 'var(--ri-card-bg)',
+            color: step === 0 ? 'var(--ri-text-muted)' : 'var(--ri-text-secondary)',
             fontSize: '0.85rem', cursor: step === 0 ? 'default' : 'pointer',
           }}
         >← Back</button>
-        <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)' }}>{step + 1} / {BUILDER_STEPS.length}</span>
+        <span style={{ fontSize: '0.75rem', color: 'var(--ri-text-muted)' }}>{step + 1} / {BUILDER_STEPS.length}</span>
         <button
           onClick={() => setStep(s => Math.min(BUILDER_STEPS.length - 1, s + 1))}
           disabled={step === BUILDER_STEPS.length - 1}
           style={{
             padding: '8px 18px', borderRadius: 999,
-            border: '1.5px solid rgba(255,255,255,0.15)',
-            background: step === BUILDER_STEPS.length - 1 ? 'rgba(255,255,255,0.05)' : 'rgba(245,158,11,0.2)',
-            color: step === BUILDER_STEPS.length - 1 ? 'rgba(255,255,255,0.2)' : '#fbbf24',
+            border: '1.5px solid var(--ri-input-border)',
+            background: step === BUILDER_STEPS.length - 1 ? 'var(--ri-card-bg)' : 'rgba(245,158,11,0.2)',
+            color: step === BUILDER_STEPS.length - 1 ? 'var(--ri-text-muted)' : '#fbbf24',
             fontSize: '0.85rem', cursor: step === BUILDER_STEPS.length - 1 ? 'default' : 'pointer',
           }}
         >Next →</button>

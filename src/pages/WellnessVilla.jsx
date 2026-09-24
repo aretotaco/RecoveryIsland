@@ -126,10 +126,10 @@ const SELECT_STYLE = {
   width: '100%',
   padding: '10px 36px 10px 14px',
   borderRadius: 10,
-  border: '1.5px solid rgba(255,215,150,0.18)',
-  background: `rgba(20,18,30,0.92) url("${SELECT_ARROW}") no-repeat right 14px center`,
+  border: '1.5px solid var(--ri-card-warm-border)',
+  background: `var(--ri-select-bg) url("${SELECT_ARROW}") no-repeat right 14px center`,
   backgroundSize: '11px',
-  color: 'rgba(255,240,200,0.88)',
+  color: 'var(--ri-text-warm-secondary)',
   fontSize: '0.85rem',
   fontFamily: "'Jost', sans-serif",
   appearance: 'none',
@@ -138,7 +138,7 @@ const SELECT_STYLE = {
   cursor: 'pointer',
 }
 
-const SELECT_OPTION_STYLE = { color: 'rgba(255,240,200,0.92)', background: '#1c1a2b' }
+const SELECT_OPTION_STYLE = { color: 'var(--ri-text-warm-secondary)', background: 'var(--ri-select-option-bg)' }
 
 function MovementTracker() {
   const { isAuthenticated } = useAuth()
@@ -222,23 +222,23 @@ function MovementTracker() {
             <button key={m.id} onClick={() => togglePreset(m.id)} style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
               padding: '12px 8px', borderRadius: 12,
-              border: active ? '1.5px solid rgba(74,222,128,0.6)' : '1.5px solid rgba(255,215,150,0.15)',
-              background: active ? 'rgba(74,222,128,0.12)' : 'rgba(255,245,220,0.04)',
-              cursor: 'pointer', transition: 'all 0.18s', color: 'white',
+              border: active ? '1.5px solid rgba(74,222,128,0.6)' : '1.5px solid var(--ri-card-warm-border)',
+              background: active ? 'rgba(74,222,128,0.12)' : 'var(--ri-card-warm-bg)',
+              cursor: 'pointer', transition: 'all 0.18s', color: 'var(--ri-text-primary)',
             }}>
               <span style={{ fontSize: 22 }}>{active ? '✅' : m.emoji}</span>
-              <span style={{ fontSize: '0.78rem', textAlign: 'center', color: active ? 'rgba(74,222,128,0.9)' : 'rgba(255,240,200,0.6)' }}>{m.label}</span>
-              <span style={{ fontSize: '0.7rem', color: 'rgba(255,240,200,0.35)' }}>{m.mins} min · ~{m.burn} cal</span>
+              <span style={{ fontSize: '0.78rem', textAlign: 'center', color: active ? 'rgba(74,222,128,0.9)' : 'var(--ri-text-warm-secondary)' }}>{m.label}</span>
+              <span style={{ fontSize: '0.7rem', color: 'var(--ri-text-warm-muted)' }}>{m.mins} min · ~{m.burn} cal</span>
             </button>
           )
         })}
       </div>
 
-      <div style={{ display: 'grid', gap: 10, padding: 14, borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-        <p style={{ fontSize: '0.82rem', color: 'rgba(255,240,200,0.5)' }}>Add any activity, even if it is not on the list.</p>
+      <div style={{ display: 'grid', gap: 10, padding: 14, borderRadius: 14, background: 'var(--ri-card-bg)', border: '1px solid var(--ri-card-border)' }}>
+        <p style={{ fontSize: '0.82rem', color: 'var(--ri-text-warm-muted)' }}>Add any activity, even if it is not on the list.</p>
         <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 0.7fr 0.9fr auto', gap: 8 }}>
-          <input value={customLabel} onChange={e => setCustomLabel(e.target.value)} placeholder="Walk to class, football, dance practice..." style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.06)', color: 'white' }} />
-          <input type="number" min="5" value={customMinutes} onChange={e => setCustomMinutes(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.06)', color: 'white' }} />
+          <input value={customLabel} onChange={e => setCustomLabel(e.target.value)} placeholder="Walk to class, football, dance practice..." style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--ri-card-bg-hover)', background: 'var(--ri-input-bg)', color: 'var(--ri-text-primary)' }} />
+          <input type="number" min="5" value={customMinutes} onChange={e => setCustomMinutes(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--ri-card-bg-hover)', background: 'var(--ri-input-bg)', color: 'var(--ri-text-primary)' }} />
           <select value={customIntensity} onChange={e => setCustomIntensity(e.target.value)} style={SELECT_STYLE}>
             <option value="light" style={SELECT_OPTION_STYLE}>Light</option>
             <option value="moderate" style={SELECT_OPTION_STYLE}>Moderate</option>
@@ -250,7 +250,7 @@ function MovementTracker() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {state.custom.map(entry => (
-          <div key={entry.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: 12, padding: '10px 12px', background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.18)', color: 'rgba(255,240,200,0.8)' }}>
+          <div key={entry.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: 12, padding: '10px 12px', background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.18)', color: 'var(--ri-text-primary)' }}>
             <span>{entry.label} · {entry.minutes} min</span>
             <span style={{ color: 'rgba(74,222,128,0.95)' }}>~{estimateBurn(entry.minutes, entry.label)} cal</span>
           </div>
@@ -329,14 +329,14 @@ function NourishmentGuide() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      <p style={{ fontSize: '0.82rem', color: 'rgba(255,240,200,0.5)' }}>Select a mood to get gentle food ideas, then note what you ate and how it felt in your body. No calorie guesswork.</p>
+      <p style={{ fontSize: '0.82rem', color: 'var(--ri-text-warm-muted)' }}>Select a mood to get gentle food ideas, then note what you ate and how it felt in your body. No calorie guesswork.</p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
         {MEAL_MOOD_TIPS.map((t, i) => (
           <button key={i} onClick={() => setSelected(selected === i ? null : i)} style={{
             display: 'flex', alignItems: 'center', gap: 7, padding: '8px 14px', borderRadius: 999,
-            border: selected === i ? `1.5px solid ${t.color}` : '1.5px solid rgba(255,215,150,0.15)',
-            background: selected === i ? `${t.color}20` : 'rgba(255,245,220,0.04)',
-            color: selected === i ? 'white' : 'rgba(255,240,200,0.65)', cursor: 'pointer',
+            border: selected === i ? `1.5px solid ${t.color}` : '1.5px solid var(--ri-card-warm-border)',
+            background: selected === i ? `${t.color}20` : 'var(--ri-card-warm-bg)',
+            color: selected === i ? 'white' : 'var(--ri-text-warm-secondary)', cursor: 'pointer',
             fontSize: '0.82rem', transition: 'all 0.18s',
           }}>
             <span>{t.emoji}</span> {t.mood}
@@ -350,18 +350,18 @@ function NourishmentGuide() {
           </p>
           <ul style={{ paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 6 }}>
             {tip.foods.map((f, i) => (
-              <li key={i} style={{ fontSize: '0.85rem', color: 'rgba(255,240,200,0.8)', lineHeight: 1.5 }}>{f}</li>
+              <li key={i} style={{ fontSize: '0.85rem', color: 'var(--ri-text-primary)', lineHeight: 1.5 }}>{f}</li>
             ))}
           </ul>
-          <div style={{ marginTop: 12, padding: '10px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: 10, fontSize: '0.78rem', color: 'rgba(255,240,200,0.5)', fontStyle: 'italic' }}>
+          <div style={{ marginTop: 12, padding: '10px 12px', background: 'var(--ri-card-bg)', borderRadius: 10, fontSize: '0.78rem', color: 'var(--ri-text-warm-muted)', fontStyle: 'italic' }}>
             {tip.why}
           </div>
         </div>
       )}
 
-      <div style={{ display: 'grid', gap: 12, padding: 14, borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+      <div style={{ display: 'grid', gap: 12, padding: 14, borderRadius: 14, background: 'var(--ri-card-bg)', border: '1px solid var(--ri-card-border)' }}>
         <div style={{ display: 'grid', gap: 10 }}>
-          <input value={mealText} onChange={e => setMealText(e.target.value)} placeholder="What did you eat or drink?" style={{ width: '100%', padding: '11px 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.06)', color: 'white' }} />
+          <input value={mealText} onChange={e => setMealText(e.target.value)} placeholder="What did you eat or drink?" style={{ width: '100%', padding: '11px 12px', borderRadius: 10, border: '1px solid var(--ri-card-bg-hover)', background: 'var(--ri-input-bg)', color: 'var(--ri-text-primary)' }} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8 }}>
             <select value={mealMoment} onChange={e => setMealMoment(e.target.value)} style={SELECT_STYLE}>
               <option value="breakfast" style={SELECT_OPTION_STYLE}>Breakfast</option>
@@ -369,7 +369,7 @@ function NourishmentGuide() {
               <option value="dinner" style={SELECT_OPTION_STYLE}>Dinner</option>
               <option value="snack" style={SELECT_OPTION_STYLE}>Snack</option>
             </select>
-            <textarea value={reflection} onChange={e => setReflection(e.target.value)} placeholder="How did it leave you feeling afterwards?" rows={2} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.06)', color: 'white', resize: 'vertical' }} />
+            <textarea value={reflection} onChange={e => setReflection(e.target.value)} placeholder="How did it leave you feeling afterwards?" rows={2} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--ri-card-bg-hover)', background: 'var(--ri-input-bg)', color: 'var(--ri-text-primary)', resize: 'vertical' }} />
           </div>
           <button onClick={saveMeal} style={{ padding: '11px 14px', borderRadius: 999, border: 'none', background: 'linear-gradient(135deg, #f97316, #fb7185)', color: 'white', cursor: 'pointer' }}>
             Save nourishment check-in
@@ -379,14 +379,14 @@ function NourishmentGuide() {
 
       {mealLogs.length > 0 && (
         <div style={{ display: 'grid', gap: 10 }}>
-          <p style={{ fontSize: '0.82rem', color: 'rgba(255,240,200,0.5)' }}>Recent nourishment check-ins</p>
+          <p style={{ fontSize: '0.82rem', color: 'var(--ri-text-warm-muted)' }}>Recent nourishment check-ins</p>
           {mealLogs.map(entry => (
-            <div key={entry.id} style={{ display: 'grid', gap: 6, padding: 12, borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div key={entry.id} style={{ display: 'grid', gap: 6, padding: 12, borderRadius: 12, background: 'var(--ri-card-bg)', border: '1px solid var(--ri-card-border)' }}>
               <div>
-                <div style={{ color: 'white', fontSize: '0.9rem', marginBottom: 4 }}>{entry.text}</div>
-                <div style={{ fontSize: '0.75rem', color: 'rgba(255,240,200,0.45)' }}>{entry.mood} · {entry.moment || 'meal'}</div>
+                <div style={{ color: 'var(--ri-text-primary)', fontSize: '0.9rem', marginBottom: 4 }}>{entry.text}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--ri-text-warm-muted)' }}>{entry.mood} · {entry.moment || 'meal'}</div>
               </div>
-              {entry.reflection && <div style={{ color: 'rgba(255,240,200,0.7)', fontSize: '0.8rem', lineHeight: 1.6 }}>{entry.reflection}</div>}
+              {entry.reflection && <div style={{ color: 'var(--ri-text-warm-secondary)', fontSize: '0.8rem', lineHeight: 1.6 }}>{entry.reflection}</div>}
             </div>
           ))}
         </div>
@@ -439,9 +439,9 @@ function RoutineBuilder() {
         {['morning', 'evening'].map(t => (
           <button key={t} onClick={() => switchTab(t)} style={{
             padding: '8px 20px', borderRadius: 999, cursor: 'pointer', fontSize: '0.85rem',
-            border: tab === t ? '1.5px solid #f43f5e' : '1.5px solid rgba(255,215,150,0.15)',
-            background: tab === t ? 'rgba(244,63,94,0.15)' : 'rgba(255,245,220,0.04)',
-            color: tab === t ? '#fda4af' : 'rgba(255,240,200,0.55)', transition: 'all 0.18s',
+            border: tab === t ? '1.5px solid #f43f5e' : '1.5px solid var(--ri-card-warm-border)',
+            background: tab === t ? 'rgba(244,63,94,0.15)' : 'var(--ri-card-warm-bg)',
+            color: tab === t ? '#fda4af' : 'var(--ri-text-warm-secondary)', transition: 'all 0.18s',
           }}>
             {t === 'morning' ? 'Morning' : 'Evening'}
           </button>
@@ -453,9 +453,9 @@ function RoutineBuilder() {
           return (
             <button key={item.id} onClick={() => toggleItem(item.id)} style={{
               display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 12,
-              border: on ? '1.5px solid rgba(244,63,94,0.5)' : '1.5px solid rgba(255,215,150,0.12)',
-              background: on ? 'rgba(244,63,94,0.1)' : 'rgba(255,245,220,0.03)',
-              cursor: 'pointer', color: on ? '#fda4af' : 'rgba(255,240,200,0.6)',
+              border: on ? '1.5px solid rgba(244,63,94,0.5)' : '1.5px solid var(--ri-card-warm-border)',
+              background: on ? 'rgba(244,63,94,0.1)' : 'var(--ri-card-warm-bg)',
+              cursor: 'pointer', color: on ? '#fda4af' : 'var(--ri-text-warm-secondary)',
               fontSize: '0.8rem', textAlign: 'left', transition: 'all 0.18s',
             }}>
               <span style={{ fontSize: 16, flexShrink: 0 }}>{on ? '✅' : item.emoji}</span>
@@ -519,31 +519,31 @@ function SleepTracker() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <span style={{ fontSize: 40 }}>{SLEEP_QUALITY.find(q => q.val === entry.quality)?.emoji}</span>
           <div>
-            <p style={{ color: 'rgba(255,240,200,0.85)', fontSize: '0.95rem' }}>
+            <p style={{ color: 'var(--ri-text-primary)', fontSize: '0.95rem' }}>
               You logged <strong style={{ color: '#c4b5fd' }}>{entry.hours}h</strong> of <strong style={{ color: '#c4b5fd' }}>{SLEEP_QUALITY.find(q => q.val === entry.quality)?.label}</strong> sleep
             </p>
-            <button onClick={() => setSaved(false)} style={{ marginTop: 6, background: 'none', border: '1px solid rgba(255,215,150,0.2)', borderRadius: 999, color: 'rgba(255,240,200,0.45)', fontSize: '0.75rem', padding: '4px 12px', cursor: 'pointer' }}>Update</button>
+            <button onClick={() => setSaved(false)} style={{ marginTop: 6, background: 'none', border: '1px solid var(--ri-card-warm-bg-hover)', borderRadius: 999, color: 'var(--ri-text-warm-muted)', fontSize: '0.75rem', padding: '4px 12px', cursor: 'pointer' }}>Update</button>
           </div>
         </div>
       ) : (
         <>
           <div>
-            <p style={{ fontSize: '0.82rem', color: 'rgba(255,240,200,0.5)', marginBottom: 10 }}>Hours of sleep last night</p>
+            <p style={{ fontSize: '0.82rem', color: 'var(--ri-text-warm-muted)', marginBottom: 10 }}>Hours of sleep last night</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <input type="range" min="3" max="12" step="0.5" value={hours} onChange={e => setHours(parseFloat(e.target.value))} style={{ flex: 1, accentColor: '#8b5cf6' }} />
               <span style={{ color: '#c4b5fd', fontFamily: "'Cormorant Garamond', serif", fontSize: '1.5rem', minWidth: 40, textAlign: 'right' }}>{hours}h</span>
             </div>
           </div>
           <div>
-            <p style={{ fontSize: '0.82rem', color: 'rgba(255,240,200,0.5)', marginBottom: 10 }}>Sleep quality</p>
+            <p style={{ fontSize: '0.82rem', color: 'var(--ri-text-warm-muted)', marginBottom: 10 }}>Sleep quality</p>
             <div style={{ display: 'flex', gap: 10 }}>
               {SLEEP_QUALITY.map(q => (
                 <button key={q.val} onClick={() => setQuality(q.val)} style={{
                   flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
                   padding: '12px 8px', borderRadius: 12,
-                  border: quality === q.val ? `1.5px solid ${q.color}` : '1.5px solid rgba(255,215,150,0.12)',
-                  background: quality === q.val ? `${q.color}18` : 'rgba(255,245,220,0.04)',
-                  cursor: 'pointer', color: quality === q.val ? q.color : 'rgba(255,240,200,0.55)',
+                  border: quality === q.val ? `1.5px solid ${q.color}` : '1.5px solid var(--ri-card-warm-border)',
+                  background: quality === q.val ? `${q.color}18` : 'var(--ri-card-warm-bg)',
+                  cursor: 'pointer', color: quality === q.val ? q.color : 'var(--ri-text-warm-secondary)',
                   fontSize: '0.8rem', transition: 'all 0.18s',
                 }}>
                   <span style={{ fontSize: 22 }}>{q.emoji}</span>
@@ -559,7 +559,7 @@ function SleepTracker() {
           )}
         </>
       )}
-      <div style={{ padding: '12px 14px', background: 'rgba(255,255,255,0.04)', borderRadius: 10, fontSize: '0.78rem', color: 'rgba(255,240,200,0.45)', lineHeight: 1.6 }}>
+      <div style={{ padding: '12px 14px', background: 'var(--ri-card-bg)', borderRadius: 10, fontSize: '0.78rem', color: 'var(--ri-text-warm-muted)', lineHeight: 1.6 }}>
         Adults need 7-9 hours. Consistent sleep times improve mood, focus, and resilience more than any supplement.
       </div>
     </div>
@@ -603,15 +603,15 @@ function HydrationTracker() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      <p style={{ fontSize: '0.82rem', color: 'rgba(255,240,200,0.5)' }}>Tap a glass to log how many cups of water or other fluids you've had today. Target: {HYDRATION_TARGET} cups.</p>
+      <p style={{ fontSize: '0.82rem', color: 'var(--ri-text-warm-muted)' }}>Tap a glass to log how many cups of water or other fluids you've had today. Target: {HYDRATION_TARGET} cups.</p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
         {Array.from({ length: HYDRATION_TARGET }, (_, i) => {
           const filled = i < cups
           return (
             <button key={i} onClick={() => setCupCount(filled && cups === i + 1 ? i : i + 1)} style={{
               width: 38, height: 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              border: filled ? `1.5px solid ${status.border}` : '1.5px solid rgba(255,215,150,0.15)',
-              background: filled ? status.bg : 'rgba(255,245,220,0.04)',
+              border: filled ? `1.5px solid ${status.border}` : '1.5px solid var(--ri-card-warm-border)',
+              background: filled ? status.bg : 'var(--ri-card-warm-bg)',
               cursor: 'pointer', fontSize: 18, transition: 'all 0.18s',
             }}>
               {filled ? '\u{1F4A7}' : '\u{1F95B}'}
@@ -619,8 +619,8 @@ function HydrationTracker() {
           )
         })}
         <button onClick={() => setCupCount(cups + 1)} style={{
-          padding: '0 14px', height: 38, borderRadius: 10, border: '1.5px dashed rgba(255,215,150,0.25)',
-          background: 'rgba(255,245,220,0.04)', color: 'rgba(255,240,200,0.65)', cursor: 'pointer', fontSize: '0.8rem',
+          padding: '0 14px', height: 38, borderRadius: 10, border: '1.5px dashed var(--ri-card-warm-bg-hover)',
+          background: 'var(--ri-card-warm-bg)', color: 'var(--ri-text-warm-secondary)', cursor: 'pointer', fontSize: '0.8rem',
         }}>
           +1 extra
         </button>
@@ -630,9 +630,9 @@ function HydrationTracker() {
       </div>
       <div style={{ display: 'grid', gap: 10 }}>
         {HYDRATION_TIPS.map(tip => (
-          <div key={tip.title} style={{ padding: '10px 12px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <div key={tip.title} style={{ padding: '10px 12px', borderRadius: 10, background: 'var(--ri-card-bg)', border: '1px solid var(--ri-card-border)' }}>
             <p style={{ fontSize: '0.78rem', color: '#7dd3fc', fontWeight: 600, marginBottom: 4 }}>{tip.title}</p>
-            <p style={{ fontSize: '0.8rem', color: 'rgba(255,240,200,0.6)', lineHeight: 1.5 }}>{tip.text}</p>
+            <p style={{ fontSize: '0.8rem', color: 'var(--ri-text-warm-secondary)', lineHeight: 1.5 }}>{tip.text}</p>
           </div>
         ))}
       </div>
@@ -729,9 +729,9 @@ function WellnessKnowledgeHub() {
         {[{ id: 'learn', label: 'Did You Know' }, { id: 'quiz', label: 'Quick Quiz' }].map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{
             padding: '8px 20px', borderRadius: 999, cursor: 'pointer', fontSize: '0.85rem',
-            border: tab === t.id ? '1.5px solid #38bdf8' : '1.5px solid rgba(255,215,150,0.15)',
-            background: tab === t.id ? 'rgba(56,189,248,0.15)' : 'rgba(255,245,220,0.04)',
-            color: tab === t.id ? '#7dd3fc' : 'rgba(255,240,200,0.55)', transition: 'all 0.18s',
+            border: tab === t.id ? '1.5px solid #38bdf8' : '1.5px solid var(--ri-card-warm-border)',
+            background: tab === t.id ? 'rgba(56,189,248,0.15)' : 'var(--ri-card-warm-bg)',
+            color: tab === t.id ? '#7dd3fc' : 'var(--ri-text-warm-secondary)', transition: 'all 0.18s',
           }}>
             {t.label}
           </button>
@@ -744,9 +744,9 @@ function WellnessKnowledgeHub() {
             {FACT_CATEGORIES.map(cat => (
               <button key={cat} onClick={() => changeCategory(cat)} style={{
                 padding: '5px 12px', borderRadius: 999, cursor: 'pointer', fontSize: '0.72rem',
-                border: factCategory === cat ? '1.5px solid #38bdf8' : '1.5px solid rgba(255,215,150,0.15)',
-                background: factCategory === cat ? 'rgba(56,189,248,0.15)' : 'rgba(255,245,220,0.04)',
-                color: factCategory === cat ? '#7dd3fc' : 'rgba(255,240,200,0.55)',
+                border: factCategory === cat ? '1.5px solid #38bdf8' : '1.5px solid var(--ri-card-warm-border)',
+                background: factCategory === cat ? 'rgba(56,189,248,0.15)' : 'var(--ri-card-warm-bg)',
+                color: factCategory === cat ? '#7dd3fc' : 'var(--ri-text-warm-secondary)',
               }}>
                 {cat}
               </button>
@@ -770,54 +770,54 @@ function WellnessKnowledgeHub() {
                   position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden',
                   textAlign: 'center', padding: '28px 20px', borderRadius: 16,
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10,
-                  border: '1.5px solid rgba(255,215,150,0.15)', background: 'rgba(255,245,220,0.04)', color: 'white',
+                  border: '1.5px solid var(--ri-card-warm-border)', background: 'var(--ri-card-warm-bg)', color: 'var(--ri-text-primary)',
                 }}>
                   <span style={{ fontSize: 30 }}>{currentFact.emoji}</span>
                   <span style={{ fontSize: '0.72rem', color: '#7dd3fc', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{currentFact.category}</span>
-                  <span style={{ fontSize: '1rem', color: 'rgba(255,240,200,0.9)', lineHeight: 1.5, maxWidth: 380 }}>{currentFact.front}</span>
-                  <span style={{ fontSize: '0.68rem', color: 'rgba(255,240,200,0.35)' }}>Tap the card to reveal the answer</span>
+                  <span style={{ fontSize: '1rem', color: 'var(--ri-text-primary)', lineHeight: 1.5, maxWidth: 380 }}>{currentFact.front}</span>
+                  <span style={{ fontSize: '0.68rem', color: 'var(--ri-text-warm-muted)' }}>Tap the card to reveal the answer</span>
                 </div>
                 <div style={{
                   position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)',
                   textAlign: 'center', padding: '28px 20px', borderRadius: 16,
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10,
-                  border: '1.5px solid rgba(56,189,248,0.5)', background: 'rgba(56,189,248,0.1)', color: 'white',
+                  border: '1.5px solid rgba(56,189,248,0.5)', background: 'rgba(56,189,248,0.1)', color: 'var(--ri-text-primary)',
                 }}>
                   <span style={{ fontSize: 30 }}>{currentFact.emoji}</span>
                   <span style={{ fontSize: '0.72rem', color: '#7dd3fc', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{currentFact.category}</span>
-                  <span style={{ fontSize: '0.9rem', color: 'rgba(255,240,200,0.8)', lineHeight: 1.6, maxWidth: 380 }}>{currentFact.back}</span>
-                  <span style={{ fontSize: '0.68rem', color: 'rgba(255,240,200,0.35)' }}>Tap to see the question again</span>
+                  <span style={{ fontSize: '0.9rem', color: 'var(--ri-text-primary)', lineHeight: 1.6, maxWidth: 380 }}>{currentFact.back}</span>
+                  <span style={{ fontSize: '0.68rem', color: 'var(--ri-text-warm-muted)' }}>Tap to see the question again</span>
                 </div>
               </div>
             </div>
           )}
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
-            <button onClick={() => goToFact(-1)} style={{ padding: '8px 16px', borderRadius: 999, border: '1px solid rgba(255,215,150,0.2)', background: 'rgba(255,245,220,0.04)', color: 'rgba(255,240,200,0.7)', cursor: 'pointer' }}>{'←'} Prev</button>
-            <span style={{ fontSize: '0.75rem', color: 'rgba(255,240,200,0.45)' }}>{filteredFacts.length ? factIndex + 1 : 0} / {filteredFacts.length}</span>
-            <button onClick={() => goToFact(1)} style={{ padding: '8px 16px', borderRadius: 999, border: '1px solid rgba(255,215,150,0.2)', background: 'rgba(255,245,220,0.04)', color: 'rgba(255,240,200,0.7)', cursor: 'pointer' }}>Next {'→'}</button>
+            <button onClick={() => goToFact(-1)} style={{ padding: '8px 16px', borderRadius: 999, border: '1px solid var(--ri-card-warm-bg-hover)', background: 'var(--ri-card-warm-bg)', color: 'var(--ri-text-warm-secondary)', cursor: 'pointer' }}>{'←'} Prev</button>
+            <span style={{ fontSize: '0.75rem', color: 'var(--ri-text-warm-muted)' }}>{filteredFacts.length ? factIndex + 1 : 0} / {filteredFacts.length}</span>
+            <button onClick={() => goToFact(1)} style={{ padding: '8px 16px', borderRadius: 999, border: '1px solid var(--ri-card-warm-bg-hover)', background: 'var(--ri-card-warm-bg)', color: 'var(--ri-text-warm-secondary)', cursor: 'pointer' }}>Next {'→'}</button>
           </div>
         </div>
       )}
 
       {tab === 'quiz' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <p style={{ fontSize: '0.78rem', color: 'rgba(255,240,200,0.45)' }}>
+          <p style={{ fontSize: '0.78rem', color: 'var(--ri-text-warm-muted)' }}>
             Best score: {stats.bestScore}/6 · Attempts: {stats.attempts}
           </p>
           {!finished ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 16, borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 16, borderRadius: 14, background: 'var(--ri-card-bg)', border: '1px solid var(--ri-card-border)' }}>
               <p style={{ fontSize: '0.72rem', color: '#7dd3fc', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 Question {qIndex + 1} of {quizSet.length} · {current.category}
               </p>
-              <p style={{ fontSize: '0.95rem', color: 'white', lineHeight: 1.5 }}>{current.q}</p>
+              <p style={{ fontSize: '0.95rem', color: 'var(--ri-text-primary)', lineHeight: 1.5 }}>{current.q}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {current.options.map((opt, idx) => {
                   const isSelected = selectedOption === idx
                   const isCorrect = idx === current.correct
-                  let border = '1.5px solid rgba(255,215,150,0.15)'
-                  let bg = 'rgba(255,245,220,0.04)'
-                  let color = 'rgba(255,240,200,0.8)'
+                  let border = '1.5px solid var(--ri-card-warm-border)'
+                  let bg = 'var(--ri-card-warm-bg)'
+                  let color = 'var(--ri-text-primary)'
                   if (selectedOption !== null && isCorrect) { border = '1.5px solid rgba(74,222,128,0.6)'; bg = 'rgba(74,222,128,0.12)'; color = '#86efac' }
                   else if (isSelected && !isCorrect) { border = '1.5px solid rgba(239,68,68,0.6)'; bg = 'rgba(239,68,68,0.12)'; color = '#fca5a5' }
                   return (
@@ -832,7 +832,7 @@ function WellnessKnowledgeHub() {
               </div>
               {selectedOption !== null && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <p style={{ fontSize: '0.8rem', color: 'rgba(255,240,200,0.6)', lineHeight: 1.5 }}>{current.explain}</p>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--ri-text-warm-secondary)', lineHeight: 1.5 }}>{current.explain}</p>
                   <button onClick={nextQuestion} style={{ padding: '10px 14px', borderRadius: 999, border: 'none', background: 'linear-gradient(135deg, #38bdf8, #0ea5e9)', color: 'white', cursor: 'pointer', fontSize: '0.85rem' }}>
                     {qIndex + 1 < quizSet.length ? 'Next Question' : 'See Results'}
                   </button>
@@ -841,8 +841,8 @@ function WellnessKnowledgeHub() {
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 20, borderRadius: 14, background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.25)', textAlign: 'center' }}>
-              <p style={{ fontSize: '1.4rem', color: 'white' }}>You scored {score}/{quizSet.length}</p>
-              <p style={{ fontSize: '0.82rem', color: 'rgba(255,240,200,0.6)' }}>
+              <p style={{ fontSize: '1.4rem', color: 'var(--ri-text-primary)' }}>You scored {score}/{quizSet.length}</p>
+              <p style={{ fontSize: '0.82rem', color: 'var(--ri-text-warm-secondary)' }}>
                 {score === quizSet.length ? 'Perfect score! Your wellness knowledge is sharp.' : 'Keep exploring the Did You Know cards to boost your score next time.'}
               </p>
               <button onClick={retakeQuiz} style={{ padding: '10px 14px', borderRadius: 999, border: 'none', background: 'linear-gradient(135deg, #38bdf8, #0ea5e9)', color: 'white', cursor: 'pointer', fontSize: '0.85rem' }}>
@@ -874,15 +874,15 @@ function DailyTrackers() {
         {DAILY_TRACKER_TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{
             display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 999, cursor: 'pointer', fontSize: '0.82rem',
-            border: tab === t.id ? '1.5px solid #f43f5e' : '1.5px solid rgba(255,215,150,0.15)',
-            background: tab === t.id ? 'rgba(244,63,94,0.15)' : 'rgba(255,245,220,0.04)',
-            color: tab === t.id ? '#fda4af' : 'rgba(255,240,200,0.55)', transition: 'all 0.18s',
+            border: tab === t.id ? '1.5px solid #f43f5e' : '1.5px solid var(--ri-card-warm-border)',
+            background: tab === t.id ? 'rgba(244,63,94,0.15)' : 'var(--ri-card-warm-bg)',
+            color: tab === t.id ? '#fda4af' : 'var(--ri-text-warm-secondary)', transition: 'all 0.18s',
           }}>
             <span>{t.emoji}</span> {t.label}
           </button>
         ))}
       </div>
-      <p style={{ fontSize: '0.8rem', color: 'rgba(255,240,200,0.5)' }}>
+      <p style={{ fontSize: '0.8rem', color: 'var(--ri-text-warm-muted)' }}>
         {active.hint} These check-ins feed straight into "Your Week at a Glance" below.
       </p>
       {tab === 'movement' && <MovementTracker />}
@@ -950,21 +950,21 @@ function WeeklySummary() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
-        <div style={{ padding: '14px 16px', borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <p style={{ fontSize: '0.72rem', color: 'rgba(255,240,200,0.45)', marginBottom: 6 }}>Movement this week</p>
-          <p style={{ color: 'white', fontSize: '1.1rem' }}>{totalMinutes} min{totalBurn > 0 ? ` · ~${totalBurn} cal` : ''}</p>
+        <div style={{ padding: '14px 16px', borderRadius: 14, background: 'var(--ri-card-bg)', border: '1px solid var(--ri-card-border)' }}>
+          <p style={{ fontSize: '0.72rem', color: 'var(--ri-text-warm-muted)', marginBottom: 6 }}>Movement this week</p>
+          <p style={{ color: 'var(--ri-text-primary)', fontSize: '1.1rem' }}>{totalMinutes} min{totalBurn > 0 ? ` · ~${totalBurn} cal` : ''}</p>
         </div>
-        <div style={{ padding: '14px 16px', borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <p style={{ fontSize: '0.72rem', color: 'rgba(255,240,200,0.45)', marginBottom: 6 }}>Average sleep</p>
-          <p style={{ color: 'white', fontSize: '1.1rem' }}>{avgSleep ? `${avgSleep}h` : 'No logs yet'}</p>
+        <div style={{ padding: '14px 16px', borderRadius: 14, background: 'var(--ri-card-bg)', border: '1px solid var(--ri-card-border)' }}>
+          <p style={{ fontSize: '0.72rem', color: 'var(--ri-text-warm-muted)', marginBottom: 6 }}>Average sleep</p>
+          <p style={{ color: 'var(--ri-text-primary)', fontSize: '1.1rem' }}>{avgSleep ? `${avgSleep}h` : 'No logs yet'}</p>
         </div>
-        <div style={{ padding: '14px 16px', borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <p style={{ fontSize: '0.72rem', color: 'rgba(255,240,200,0.45)', marginBottom: 6 }}>Nourishment check-ins</p>
-          <p style={{ color: 'white', fontSize: '1.1rem' }}>{nourishmentCount}</p>
+        <div style={{ padding: '14px 16px', borderRadius: 14, background: 'var(--ri-card-bg)', border: '1px solid var(--ri-card-border)' }}>
+          <p style={{ fontSize: '0.72rem', color: 'var(--ri-text-warm-muted)', marginBottom: 6 }}>Nourishment check-ins</p>
+          <p style={{ color: 'var(--ri-text-primary)', fontSize: '1.1rem' }}>{nourishmentCount}</p>
         </div>
-        <div style={{ padding: '14px 16px', borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <p style={{ fontSize: '0.72rem', color: 'rgba(255,240,200,0.45)', marginBottom: 6 }}>Average hydration</p>
-          <p style={{ color: 'white', fontSize: '1.1rem' }}>{avgHydration ? `${avgHydration} cups` : 'No logs yet'}</p>
+        <div style={{ padding: '14px 16px', borderRadius: 14, background: 'var(--ri-card-bg)', border: '1px solid var(--ri-card-border)' }}>
+          <p style={{ fontSize: '0.72rem', color: 'var(--ri-text-warm-muted)', marginBottom: 6 }}>Average hydration</p>
+          <p style={{ color: 'var(--ri-text-primary)', fontSize: '1.1rem' }}>{avgHydration ? `${avgHydration} cups` : 'No logs yet'}</p>
         </div>
       </div>
 
@@ -975,19 +975,19 @@ function WeeklySummary() {
             <div key={d.dateStr} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
               <div style={{
                 width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: logged ? 'rgba(244,63,94,0.16)' : 'rgba(255,255,255,0.04)',
-                border: logged ? '2px solid #f43f5e' : '1px solid rgba(255,255,255,0.1)',
+                background: logged ? 'rgba(244,63,94,0.16)' : 'var(--ri-card-bg)',
+                border: logged ? '2px solid #f43f5e' : '1px solid var(--ri-card-border)',
                 fontSize: 14,
               }}>
                 {logged ? '✓' : '·'}
               </div>
-              <span style={{ fontSize: '0.68rem', color: 'rgba(255,240,200,0.45)' }}>{d.day}</span>
+              <span style={{ fontSize: '0.68rem', color: 'var(--ri-text-warm-muted)' }}>{d.day}</span>
             </div>
           )
         })}
       </div>
 
-      <p style={{ fontSize: '0.78rem', color: 'rgba(255,240,200,0.45)', textAlign: 'center' }}>
+      <p style={{ fontSize: '0.78rem', color: 'var(--ri-text-warm-muted)', textAlign: 'center' }}>
         {activeDays > 0
           ? `You logged something in Wellness Villa on ${activeDays} of the last 7 days.`
           : 'Log movement, sleep, or a meal above to start building your weekly picture.'}

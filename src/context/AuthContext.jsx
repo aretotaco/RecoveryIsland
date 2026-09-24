@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { fetchProfile, isSupabaseConfigured, requireSupabase, upsertProfile } from '../lib/supabase'
 import { saveUserProfile } from '../lib/userProfile'
 import { flushPendingSync } from '../lib/villaSync'
+import { flushPendingEvents, trackEvent } from '../lib/activityTracking'
 
 const AuthContext = createContext(null)
 const ACTIVE_USER_KEY = 'ri_active_user_id'
@@ -123,6 +124,7 @@ export function AuthProvider({ children }) {
         avatar: nextUser.avatarConfig,
       })
       flushPendingSync()
+      flushPendingEvents()
     }
   }
 
@@ -157,7 +159,10 @@ export function AuthProvider({ children }) {
     })
 
     function onFocus() {
-      if (document.visibilityState === 'visible') flushPendingSync()
+      if (document.visibilityState === 'visible') {
+        flushPendingSync()
+        flushPendingEvents()
+      }
     }
     document.addEventListener('visibilitychange', onFocus)
     window.addEventListener('online', onFocus)
@@ -181,6 +186,9 @@ export function AuthProvider({ children }) {
     const profile = await ensureProfile(data.user, normalizedStudyId).catch(() => null)
     const nextUser = mapProfile(profile, data.user)
     commitUser(nextUser)
+    // Answers "how many times did they enter Recovery Island this week" for
+    // the researcher dashboard — grouped by ISO week server-side.
+    trackEvent('session_start', {})
     return nextUser
   }
 

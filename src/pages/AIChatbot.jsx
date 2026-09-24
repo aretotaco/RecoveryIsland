@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { buildSageContext } from '../lib/sageContext'
+import { trackEvent } from '../lib/activityTracking'
 
 const SYSTEM_PROMPT = `You are Sage, a warm and empathetic AI wellness companion living on Serenity Island. 
 
@@ -65,6 +66,7 @@ export default function AIChatbot() {
     setMessages(newMessages)
     setInput('')
     setLoading(true)
+    trackEvent('feature_click', { villa: 'ai-chatbot', feature: 'ai-chatbot' })
 
     try {
       const response = await fetch('/api/chat', {

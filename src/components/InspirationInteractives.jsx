@@ -110,9 +110,9 @@ export function AffirmationDeck() {
         {AFFIRMATION_CATEGORIES.map(cat => (
           <button key={cat} onClick={() => changeCategory(cat)} style={{
             padding: '5px 12px', borderRadius: 999, cursor: 'pointer', fontSize: '0.72rem',
-            border: category === cat ? '1.5px solid var(--villa-color)' : '1.5px solid rgba(255,255,255,0.12)',
-            background: category === cat ? 'rgba(249,115,22,0.15)' : 'rgba(255,255,255,0.04)',
-            color: category === cat ? 'var(--villa-color-light)' : 'rgba(255,255,255,0.55)',
+            border: category === cat ? '1.5px solid var(--villa-color)' : '1.5px solid var(--ri-input-border)',
+            background: category === cat ? 'rgba(249,115,22,0.15)' : 'var(--ri-card-bg)',
+            color: category === cat ? 'var(--villa-color-light)' : 'var(--ri-text-secondary)',
           }}>
             {cat === 'Favourites' ? `\u2661 ${cat}` : cat}
           </button>
@@ -126,8 +126,8 @@ export function AffirmationDeck() {
           <div className="affirmation-nav">
             <button className="affirmation-arrow" onClick={prev} aria-label="Previous">←</button>
             <button onClick={toggleFavourite} aria-label="Toggle favourite" style={{
-              background: isFavourite ? 'rgba(249,115,22,0.2)' : 'rgba(255,255,255,0.08)',
-              border: isFavourite ? '1px solid var(--villa-color)' : '1px solid rgba(255,255,255,0.12)',
+              background: isFavourite ? 'rgba(249,115,22,0.2)' : 'var(--ri-card-border)',
+              border: isFavourite ? '1px solid var(--villa-color)' : '1px solid var(--ri-input-border)',
               color: isFavourite ? 'var(--villa-color-light)' : 'white',
               borderRadius: '50%', width: 36, height: 36, fontSize: 15, cursor: 'pointer',
             }}>
@@ -139,7 +139,7 @@ export function AffirmationDeck() {
           <p className="affirmation-count">{index + 1} / {list.length}</p>
         </>
       ) : (
-        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', padding: '10px 0' }}>
+        <p style={{ color: 'var(--ri-text-muted)', fontSize: '0.85rem', padding: '10px 0' }}>
           No favourites yet — tap the heart on an affirmation to save it here.
         </p>
       )}
@@ -200,22 +200,22 @@ export function GoalStepper() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 14, borderRadius: 14, background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)' }}>
-        <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)' }}>My one intention right now</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 14, borderRadius: 14, background: 'var(--ri-recessed-bg)', border: '1px solid var(--ri-card-border)' }}>
+        <p style={{ fontSize: '0.78rem', color: 'var(--ri-text-secondary)' }}>My one intention right now</p>
         <input
           value={intentionInput}
           onChange={e => setIntentionInput(e.target.value)}
           placeholder="e.g. Go for a 10-minute walk on Tuesdays"
-          style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.06)', color: 'white' }}
+          style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--ri-input-border)', background: 'var(--ri-input-bg)', color: 'var(--ri-text-primary)' }}
         />
         <button onClick={saveIntention} style={{ alignSelf: 'flex-start', padding: '8px 16px', borderRadius: 999, border: 'none', background: 'var(--villa-color)', color: 'white', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}>
           Save intention
         </button>
-        {intention && <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.75)', fontStyle: 'italic' }}>Current intention: "{intention}"</p>}
+        {intention && <p style={{ fontSize: '0.82rem', color: 'var(--ri-text-secondary)', fontStyle: 'italic' }}>Current intention: "{intention}"</p>}
       </div>
 
       {doneItems > 0 && (
-        <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', textAlign: 'center' }}>
+        <p style={{ fontSize: '0.78rem', color: 'var(--ri-text-muted)', textAlign: 'center' }}>
           {doneItems} of {totalItems} steps checked off across the phases below.
         </p>
       )}
@@ -237,7 +237,7 @@ export function GoalStepper() {
                     <li key={ii} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer' }} onClick={() => toggleItem(i, ii)}>
                       <span style={{
                         flexShrink: 0, marginTop: 2, width: 16, height: 16, borderRadius: 4,
-                        border: isChecked ? '1.5px solid var(--villa-color)' : '1.5px solid rgba(255,255,255,0.3)',
+                        border: isChecked ? '1.5px solid var(--villa-color)' : '1.5px solid var(--ri-text-muted)',
                         background: isChecked ? 'var(--villa-color)' : 'transparent',
                         display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: 'white',
                       }}>
@@ -313,7 +313,7 @@ export function GratitudePromptPicker() {
           onChange={e => setReflection(e.target.value)}
           placeholder="Write a short reflection to this prompt..."
           rows={3}
-          style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.06)', color: 'white', resize: 'vertical' }}
+          style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--ri-input-border)', background: 'var(--ri-input-bg)', color: 'var(--ri-text-primary)', resize: 'vertical' }}
         />
         <button onClick={saveReflection} style={{ alignSelf: 'flex-start', padding: '9px 16px', borderRadius: 999, border: 'none', background: 'var(--villa-color)', color: 'white', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}>
           Save reflection
@@ -322,11 +322,11 @@ export function GratitudePromptPicker() {
 
       {entries.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>Recent reflections</p>
+          <p style={{ fontSize: '0.78rem', color: 'var(--ri-text-muted)' }}>Recent reflections</p>
           {entries.map(e => (
-            <div key={e.id} style={{ padding: 12, borderRadius: 12, background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div key={e.id} style={{ padding: 12, borderRadius: 12, background: 'var(--ri-recessed-bg)', border: '1px solid var(--ri-card-border)' }}>
               <p style={{ fontSize: '0.72rem', color: 'var(--villa-color-light)', marginBottom: 4 }}>{e.prompt}</p>
-              <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.5 }}>{e.text}</p>
+              <p style={{ fontSize: '0.85rem', color: 'var(--ri-text-primary)', lineHeight: 1.5 }}>{e.text}</p>
             </div>
           ))}
         </div>

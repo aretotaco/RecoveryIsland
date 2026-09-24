@@ -80,33 +80,122 @@ function addSheet(workbook, name, columns, rows) {
   return sheet
 }
 
-// Admin-only export: pulls every participant's data into one Excel workbook
-// for the research team. Never exposes the internal user id or synthetic
-// login email — only the Study ID.
-app.get('/api/admin/export-excel', async (req, res) => {
+// Shared gate for every /api/admin/* route: a single shared secret (not
+// per-researcher accounts), checked the same way the export always has been.
+function requireAdminKey(req, res) {
   const adminKey = process.env.ADMIN_EXPORT_KEY
   if (!adminKey) {
-    return res.status(500).json({ message: 'Admin export is not configured yet. Add ADMIN_EXPORT_KEY to your server .env file.' })
+    res.status(500).json({ message: 'Admin access is not configured yet. Add ADMIN_EXPORT_KEY to your server .env file.' })
+    return false
   }
 
   const providedKey = req.headers['x-admin-key'] || req.query.key
   if (providedKey !== adminKey) {
-    return res.status(401).json({ message: 'Invalid admin key' })
+    res.status(401).json({ message: 'Invalid admin key' })
+    return false
   }
 
+  return true
+}
+
+function getSupabaseAdmin(res) {
   const supabaseUrl = process.env.VITE_SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!supabaseUrl || !serviceRoleKey) {
-    return res.status(500).json({ message: 'Add SUPABASE_SERVICE_ROLE_KEY to your server .env file.' })
+    res.status(500).json({ message: 'Add SUPABASE_SERVICE_ROLE_KEY to your server .env file.' })
+    return null
+  }
+  return createClient(supabaseUrl, serviceRoleKey)
+}
+
+// ISO 8601 week key (e.g. "2026-W38") so "sessions per week" buckets match
+// calendar weeks regardless of which day of the week a participant logs in.
+// This is the grouping key only — the dashboard displays relative "Week N"
+// numbers (see buildWeekSeries below), not the raw calendar week number,
+// since a study's "week 1" is rarely January's.
+function isoWeekKey(dateInput) {
+  const date = new Date(Date.UTC(
+    new Date(dateInput).getUTCFullYear(),
+    new Date(dateInput).getUTCMonth(),
+    new Date(dateInput).getUTCDate(),
+  ))
+  const dayNum = date.getUTCDay() || 7
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum)
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1))
+  const weekNum = Math.ceil((((date - yearStart) / 86400000) + 1) / 7)
+  return `${date.getUTCFullYear()}-W${String(weekNum).padStart(2, '0')}`
+}
+
+// Monday 00:00 UTC of the week containing dateInput.
+function mondayOf(dateInput) {
+  const date = new Date(Date.UTC(
+    new Date(dateInput).getUTCFullYear(),
+    new Date(dateInput).getUTCMonth(),
+    new Date(dateInput).getUTCDate(),
+  ))
+  const dayNum = date.getUTCDay() || 7
+  date.setUTCDate(date.getUTCDate() - dayNum + 1)
+  return date
+}
+
+const WEEKDAY_FMT = { month: 'short', day: 'numeric', timeZone: 'UTC' }
+
+// A continuous, zero-filled run of weeks from `startDate` through `endDate`
+// (inclusive), labeled as relative "Week 1, Week 2, ..." rather than raw ISO
+// week numbers — a participant's or the study's own week 1, not week 38 of
+// the calendar year — with the real date range attached for the dashboard's
+// hover tooltip.
+function buildWeekSeries(startDate, endDate, countsByIsoWeek) {
+  const series = []
+  let cursor = mondayOf(startDate)
+  const lastMonday = mondayOf(endDate)
+  let weekNumber = 1
+
+  while (cursor <= lastMonday) {
+    const weekEnd = new Date(cursor)
+    weekEnd.setUTCDate(weekEnd.getUTCDate() + 6)
+    const key = isoWeekKey(cursor)
+    series.push({
+      weekNumber,
+      week: key,
+      weekStart: cursor.toISOString().slice(0, 10),
+      weekEnd: weekEnd.toISOString().slice(0, 10),
+      label: `${cursor.toLocaleDateString('en-US', WEEKDAY_FMT)} – ${weekEnd.toLocaleDateString('en-US', WEEKDAY_FMT)}`,
+      count: countsByIsoWeek.get(key) || 0,
+    })
+    cursor = new Date(cursor)
+    cursor.setUTCDate(cursor.getUTCDate() + 7)
+    weekNumber += 1
   }
 
-  try {
-    const admin = createClient(supabaseUrl, serviceRoleKey)
+  return series
+}
 
-    const [profiles, entries] = await Promise.all([
+// Admin-only export: pulls every participant's data into one Excel workbook
+// for the research team. Never exposes the internal user id or synthetic
+// login email — only the Study ID. `?studyId=` scopes every sheet to a
+// single participant, for the dashboard's "export this participant" button.
+app.get('/api/admin/export-excel', async (req, res) => {
+  if (!requireAdminKey(req, res)) return
+  const admin = getSupabaseAdmin(res)
+  if (!admin) return
+
+  const filterStudyId = req.query.studyId ? String(req.query.studyId).trim().toUpperCase() : null
+
+  try {
+    const [profilesAll, entriesAll, eventsAll] = await Promise.all([
       fetchAllRows(admin, 'profiles', 'id, study_id, display_name, created_at, updated_at'),
       fetchAllRows(admin, 'villa_entries', 'id, user_id, category, source, entry_date, entry_key, payload, updated_at'),
+      fetchAllRows(admin, 'activity_events', 'id, user_id, event_type, villa, feature, created_at'),
     ])
+
+    const profiles = filterStudyId ? profilesAll.filter(p => p.study_id === filterStudyId) : profilesAll
+    if (filterStudyId && profiles.length === 0) {
+      return res.status(404).json({ message: `No participant found with Study ID "${filterStudyId}"` })
+    }
+    const allowedUserIds = filterStudyId ? new Set(profiles.map(p => p.id)) : null
+    const entries = allowedUserIds ? entriesAll.filter(e => allowedUserIds.has(e.user_id)) : entriesAll
+    const events = allowedUserIds ? eventsAll.filter(e => allowedUserIds.has(e.user_id)) : eventsAll
 
     const studyIdByUser = new Map(profiles.map(p => [p.id, p.study_id]))
     const studyIdOf = userId => studyIdByUser.get(userId) || userId
@@ -317,13 +406,229 @@ app.get('/api/admin/export-excel', async (req, res) => {
         text: e.payload?.text || '',
       })))
 
+    // Sessions per (participant, calendar week) — answers "how many times
+    // did they enter Recovery Island per week". Grouped by the week's actual
+    // Monday date (not a raw ISO week number) so it's directly readable in
+    // the spreadsheet without decoding "2026-W39".
+    const sessionCounts = new Map() // `${userId}|${weekStart}` -> count
+    events
+      .filter(e => e.event_type === 'session_start')
+      .forEach(e => {
+        const key = `${e.user_id}|${mondayOf(e.created_at).toISOString().slice(0, 10)}`
+        sessionCounts.set(key, (sessionCounts.get(key) || 0) + 1)
+      })
+    addSheet(workbook, 'Activity - Sessions', [
+      { header: 'Study ID', key: 'study_id', width: 16 },
+      { header: 'Week Starting (Mon)', key: 'weekStart', width: 18 },
+      { header: 'Sessions', key: 'count', width: 12 },
+    ], Array.from(sessionCounts.entries())
+      .map(([key, count]) => {
+        const [userId, weekStart] = key.split('|')
+        return { study_id: studyIdOf(userId), weekStart, count }
+      })
+      .sort((a, b) => a.study_id.localeCompare(b.study_id) || a.weekStart.localeCompare(b.weekStart)))
+
+    // Total times each feature was used per participant — answers "how many
+    // times did they use each feature". Counts villa page-views separately
+    // from in-villa feature saves/clicks so both questions can be answered.
+    const featureCounts = new Map() // `${userId}|${villa}|${feature}|${eventType}` -> count
+    events
+      .filter(e => e.event_type === 'villa_view' || e.event_type === 'feature_submit' || e.event_type === 'feature_click')
+      .forEach(e => {
+        const key = `${e.user_id}|${e.villa || ''}|${e.feature || ''}|${e.event_type}`
+        featureCounts.set(key, (featureCounts.get(key) || 0) + 1)
+      })
+    addSheet(workbook, 'Activity - Feature Usage', [
+      { header: 'Study ID', key: 'study_id', width: 16 },
+      { header: 'Villa', key: 'villa', width: 16 },
+      { header: 'Feature', key: 'feature', width: 20 },
+      { header: 'Interaction Type', key: 'type', width: 16 },
+      { header: 'Times Used', key: 'count', width: 12 },
+    ], Array.from(featureCounts.entries())
+      .map(([key, count]) => {
+        const [userId, villa, feature, eventType] = key.split('|')
+        return { study_id: studyIdOf(userId), villa, feature, type: eventType, count }
+      })
+      .sort((a, b) => a.study_id.localeCompare(b.study_id) || a.villa.localeCompare(b.villa)))
+
+    const filenameSuffix = filterStudyId ? `-${filterStudyId}` : ''
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    res.setHeader('Content-Disposition', `attachment; filename="recovery-island-export-${new Date().toISOString().slice(0, 10)}.xlsx"`)
+    res.setHeader('Content-Disposition', `attachment; filename="recovery-island-export${filenameSuffix}-${new Date().toISOString().slice(0, 10)}.xlsx"`)
     await workbook.xlsx.write(res)
     res.end()
   } catch (error) {
     console.error('Admin export failed', error)
     res.status(500).json({ message: error.message || 'Export failed' })
+  }
+})
+
+// Aggregate KPIs + chart-ready series for the dashboard's overview section.
+app.get('/api/admin/overview', async (req, res) => {
+  if (!requireAdminKey(req, res)) return
+  const admin = getSupabaseAdmin(res)
+  if (!admin) return
+
+  try {
+    const [profiles, events] = await Promise.all([
+      fetchAllRows(admin, 'profiles', 'id, study_id, created_at'),
+      fetchAllRows(admin, 'activity_events', 'id, user_id, event_type, villa, feature, created_at'),
+    ])
+
+    const sessions = events.filter(e => e.event_type === 'session_start')
+    const usageEvents = events.filter(e => e.event_type === 'feature_submit' || e.event_type === 'feature_click')
+    const villaViews = events.filter(e => e.event_type === 'villa_view')
+
+    // Last 8 calendar weeks of session counts, oldest first, zero-filled so
+    // the trend chart doesn't skip weeks with no logins, labeled as relative
+    // "Week 1..8" (not raw ISO week numbers) with real dates for hover.
+    const sessionsByWeekMap = new Map()
+    sessions.forEach(e => {
+      const key = isoWeekKey(e.created_at)
+      sessionsByWeekMap.set(key, (sessionsByWeekMap.get(key) || 0) + 1)
+    })
+    const eightWeeksAgo = new Date()
+    eightWeeksAgo.setUTCDate(eightWeeksAgo.getUTCDate() - 7 * 7)
+    const sessionsByWeek = buildWeekSeries(eightWeeksAgo, new Date(), sessionsByWeekMap)
+
+    // Average villa visits per participant, per villa — "avg interaction per villa".
+    const participantCount = profiles.length || 1
+    const villaTotals = new Map()
+    villaViews.forEach(e => {
+      const villa = e.villa || 'unknown'
+      villaTotals.set(villa, (villaTotals.get(villa) || 0) + 1)
+    })
+    const avgVisitsPerVilla = Array.from(villaTotals.entries())
+      .map(([villa, total]) => ({ villa, total, avgPerParticipant: Math.round((total / participantCount) * 10) / 10 }))
+      .sort((a, b) => b.total - a.total)
+
+    // Most-used individual features (saves/clicks), across villas.
+    const featureTotals = new Map()
+    usageEvents.forEach(e => {
+      const key = `${e.villa || 'unknown'}|${e.feature || 'unknown'}`
+      featureTotals.set(key, (featureTotals.get(key) || 0) + 1)
+    })
+    const topFeatures = Array.from(featureTotals.entries())
+      .map(([key, total]) => {
+        const [villa, feature] = key.split('|')
+        return { villa, feature, total }
+      })
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 12)
+
+    res.json({
+      totalParticipants: profiles.length,
+      totalSessions: sessions.length,
+      sessionsThisWeek: sessionsByWeekMap.get(isoWeekKey(new Date())) || 0,
+      avgFeaturesPerParticipant: Math.round((usageEvents.length / participantCount) * 10) / 10,
+      sessionsByWeek,
+      avgVisitsPerVilla,
+      topFeatures,
+    })
+  } catch (error) {
+    console.error('Admin overview failed', error)
+    res.status(500).json({ message: error.message || 'Failed to load overview' })
+  }
+})
+
+// Lightweight participant list for the dashboard's search box.
+app.get('/api/admin/participants', async (req, res) => {
+  if (!requireAdminKey(req, res)) return
+  const admin = getSupabaseAdmin(res)
+  if (!admin) return
+
+  try {
+    const [profiles, sessions] = await Promise.all([
+      fetchAllRows(admin, 'profiles', 'id, study_id, created_at'),
+      fetchAllRows(admin, 'activity_events', 'user_id, event_type, created_at').then(
+        rows => rows.filter(e => e.event_type === 'session_start')
+      ),
+    ])
+
+    const query = String(req.query.q || '').trim().toUpperCase()
+    const lastActiveByUser = new Map()
+    const sessionCountByUser = new Map()
+    sessions.forEach(e => {
+      sessionCountByUser.set(e.user_id, (sessionCountByUser.get(e.user_id) || 0) + 1)
+      const prev = lastActiveByUser.get(e.user_id)
+      if (!prev || new Date(e.created_at) > new Date(prev)) lastActiveByUser.set(e.user_id, e.created_at)
+    })
+
+    const results = profiles
+      .filter(p => !query || p.study_id.toUpperCase().includes(query))
+      .map(p => ({
+        studyId: p.study_id,
+        createdAt: p.created_at,
+        totalSessions: sessionCountByUser.get(p.id) || 0,
+        lastActive: lastActiveByUser.get(p.id) || null,
+      }))
+      .sort((a, b) => a.studyId.localeCompare(b.studyId))
+      .slice(0, 50)
+
+    res.json({ participants: results })
+  } catch (error) {
+    console.error('Admin participants list failed', error)
+    res.status(500).json({ message: error.message || 'Failed to load participants' })
+  }
+})
+
+// One participant's full usage breakdown, for the dashboard's detail view.
+app.get('/api/admin/participants/:studyId', async (req, res) => {
+  if (!requireAdminKey(req, res)) return
+  const admin = getSupabaseAdmin(res)
+  if (!admin) return
+
+  const studyId = String(req.params.studyId || '').trim().toUpperCase()
+
+  try {
+    const profiles = await fetchAllRows(admin, 'profiles', 'id, study_id, created_at')
+    const profile = profiles.find(p => p.study_id === studyId)
+    if (!profile) {
+      return res.status(404).json({ message: `No participant found with Study ID "${studyId}"` })
+    }
+
+    const allEvents = await fetchAllRows(admin, 'activity_events', 'id, event_type, villa, feature, created_at, user_id')
+    const events = allEvents.filter(e => e.user_id === profile.id)
+
+    const sessions = events.filter(e => e.event_type === 'session_start')
+    const sessionsByWeekMap = new Map()
+    sessions.forEach(e => {
+      const key = isoWeekKey(e.created_at)
+      sessionsByWeekMap.set(key, (sessionsByWeekMap.get(key) || 0) + 1)
+    })
+    // Week 1 = the week this participant's account was created, not the
+    // calendar's week 1 — so the chart reads as *their* study timeline.
+    const sessionsByWeek = buildWeekSeries(profile.created_at, new Date(), sessionsByWeekMap)
+
+    const featureTotals = new Map()
+    events
+      .filter(e => e.event_type !== 'session_start')
+      .forEach(e => {
+        const key = `${e.villa || 'unknown'}|${e.feature || 'unknown'}|${e.event_type}`
+        featureTotals.set(key, (featureTotals.get(key) || 0) + 1)
+      })
+    const featureUsage = Array.from(featureTotals.entries())
+      .map(([key, total]) => {
+        const [villa, feature, eventType] = key.split('|')
+        return { villa, feature, eventType, total }
+      })
+      .sort((a, b) => b.total - a.total)
+
+    const recentActivity = [...events]
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 50)
+      .map(e => ({ eventType: e.event_type, villa: e.villa, feature: e.feature, createdAt: e.created_at }))
+
+    res.json({
+      studyId: profile.study_id,
+      createdAt: profile.created_at,
+      totalSessions: sessions.length,
+      sessionsByWeek,
+      featureUsage,
+      recentActivity,
+    })
+  } catch (error) {
+    console.error('Admin participant detail failed', error)
+    res.status(500).json({ message: error.message || 'Failed to load participant' })
   }
 })
 

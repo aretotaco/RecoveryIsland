@@ -150,11 +150,11 @@ export default function InsightsDashboard() {
                   const a = avg(list)
                   return (
                     <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <span style={{ width: 90, fontSize: '0.82rem', color: 'rgba(255,240,200,0.6)' }}>{label}</span>
-                      <div style={{ flex: 1, height: 10, borderRadius: 999, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                      <span style={{ width: 90, fontSize: '0.82rem', color: 'var(--ri-text-warm-secondary)' }}>{label}</span>
+                      <div style={{ flex: 1, height: 10, borderRadius: 999, background: 'var(--ri-input-bg)', overflow: 'hidden' }}>
                         <div style={{ height: '100%', width: a ? `${(a / 5) * 100}%` : '0%', background: 'linear-gradient(90deg, #6366f1, #a5b4fc)', borderRadius: 999 }} />
                       </div>
-                      <span style={{ width: 70, fontSize: '0.82rem', color: 'white', textAlign: 'right' }}>{a ? `${a}/5` : `${list.length ? '' : 'no data'}`}</span>
+                      <span style={{ width: 70, fontSize: '0.82rem', color: 'var(--ri-text-primary)', textAlign: 'right' }}>{a ? `${a}/5` : `${list.length ? '' : 'no data'}`}</span>
                     </div>
                   )
                 })}
@@ -170,11 +170,11 @@ export default function InsightsDashboard() {
                   const a = avg(list)
                   return (
                     <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <span style={{ width: 90, fontSize: '0.82rem', color: 'rgba(255,240,200,0.6)' }}>{label}</span>
-                      <div style={{ flex: 1, height: 10, borderRadius: 999, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                      <span style={{ width: 90, fontSize: '0.82rem', color: 'var(--ri-text-warm-secondary)' }}>{label}</span>
+                      <div style={{ flex: 1, height: 10, borderRadius: 999, background: 'var(--ri-input-bg)', overflow: 'hidden' }}>
                         <div style={{ height: '100%', width: a ? `${(a / 5) * 100}%` : '0%', background: 'linear-gradient(90deg, #10b981, #6ee7b7)', borderRadius: 999 }} />
                       </div>
-                      <span style={{ width: 70, fontSize: '0.82rem', color: 'white', textAlign: 'right' }}>{a ? `${a}/5` : 'no data'}</span>
+                      <span style={{ width: 70, fontSize: '0.82rem', color: 'var(--ri-text-primary)', textAlign: 'right' }}>{a ? `${a}/5` : 'no data'}</span>
                     </div>
                   )
                 })}
@@ -189,8 +189,8 @@ export default function InsightsDashboard() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {assessmentHistory.map(entry => (
-                    <div key={entry.id} style={{ padding: '12px 14px', borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                      <p style={{ fontSize: '0.75rem', color: 'rgba(255,240,200,0.45)', marginBottom: 8 }}>
+                    <div key={entry.id} style={{ padding: '12px 14px', borderRadius: 12, background: 'var(--ri-card-bg)', border: '1px solid var(--ri-card-border)' }}>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--ri-text-warm-muted)', marginBottom: 8 }}>
                         {new Date(entry.date).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </p>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 8 }}>
@@ -200,8 +200,8 @@ export default function InsightsDashboard() {
                           return (
                             <div key={id} style={{ fontSize: '0.78rem' }}>
                               <span style={{ color: meta.color, fontWeight: 700 }}>{meta.shortName}</span>{' '}
-                              <span style={{ color: 'white' }}>{s.score}/{meta.maxScore}</span>{' '}
-                              <span style={{ color: 'rgba(255,240,200,0.45)' }}>({meta.getSeverity(s.score)})</span>
+                              <span style={{ color: 'var(--ri-text-primary)' }}>{s.score}/{meta.maxScore}</span>{' '}
+                              <span style={{ color: 'var(--ri-text-warm-muted)' }}>({meta.getSeverity(s.score)})</span>
                             </div>
                           )
                         })}
