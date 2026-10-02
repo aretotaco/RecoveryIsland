@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MaiaGuide from './MaiaGuide'
 import { trackEvent } from '../lib/activityTracking'
+import { useVillaExplored } from '../lib/villaProgress'
 
 function normalizeVideoUrl(url) {
   if (!url) return ''
@@ -50,6 +51,7 @@ export default function VillaLayout({ villa }) {
   const currentIdx = VILLA_ORDER.findIndex(v => v.id === villa.id)
   const prevVilla = currentIdx > 0 ? VILLA_ORDER[currentIdx - 1] : null
   const nextVilla = currentIdx >= 0 && currentIdx < VILLA_ORDER.length - 1 ? VILLA_ORDER[currentIdx + 1] : null
+  const contentRef = useVillaExplored(VILLA_ORDER[currentIdx]?.path)
 
   useEffect(() => {
     const slug = VILLA_ORDER.find(v => v.id === villa.id)?.path?.slice(1)
@@ -75,7 +77,7 @@ export default function VillaLayout({ villa }) {
         <p className="villa-subtitle">{villa.tagline}</p>
       </div>
 
-      <div className="villa-content">
+      <div className="villa-content" ref={contentRef}>
         {villa.sections.map((section, i) => {
           const embedUrl = normalizeVideoUrl(section.videoUrl)
           // Sections with a lot of content (video/script/interactive tool) take the full row

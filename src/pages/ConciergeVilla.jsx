@@ -4,6 +4,7 @@ import MaiaGuide from '../components/MaiaGuide'
 import { MaiaAvatarSvg, MaiaAvatarBuilder, loadMaiaAvatar, saveMaiaAvatar } from '../components/MaiaAvatar'
 import { useAuth } from '../context/AuthContext'
 import { syncEntry, syncProfile } from '../lib/villaSync'
+import { PROGRESS_VILLAS, loadExplored, onExploredChange, restoreExplored, useVillaExplored } from '../lib/villaProgress'
 
 const VILLAS = [
   { path: '/mood-diary',  label: 'Mood Diary Centre', emoji: '\u{1F4D3}', recommended: true,  note: 'Start here - log your first mood check-in' },
@@ -11,12 +12,13 @@ const VILLAS = [
   { path: '/relaxation',  label: 'Relaxation Villa',   emoji: '\u{1F33F}', recommended: false, note: 'Unwind with calming activities' },
   { path: '/wellness',    label: 'Wellness Villa',     emoji: '\u{1F49A}', recommended: false, note: 'Build healthy daily habits' },
   { path: '/inspiration', label: 'Inspiration Villa',  emoji: '✨',    recommended: false, note: 'Real stories, affirmations, and goals' },
-  { path: '/ai-chatbot',  label: 'AI Companion',       emoji: '\u{1F916}', recommended: false, note: 'Talk things through anytime' },
 ]
 
 const CONCIERGE_KEY = 'ri_concierge_v2'
 function loadConcierge() { try { return JSON.parse(localStorage.getItem(CONCIERGE_KEY) || 'null') } catch { return null } }
-function saveConcierge(s) { try { localStorage.setItem(CONCIERGE_KEY, JSON.stringify(s)) } catch {} }
+// Merge rather than overwrite so villa progress (`explored`, written by
+// lib/villaProgress) isn't clobbered when the avatar is saved.
+function saveConcierge(s) { try { localStorage.setItem(CONCIERGE_KEY, JSON.stringify({ ...loadConcierge(), ...s })) } catch {} }
 
 export default function ConciergeVilla() {
   const navigate = useNavigate()
@@ -25,44 +27,36 @@ export default function ConciergeVilla() {
   const [phase,     setPhase]     = useState(saved ? 'main' : 'welcome')
   const [wizStep,   setWizStep]   = useState(0)
   const [avatarCfg, setAvatarCfg] = useState(() => saved?.avatarConfig || user?.avatarConfig || loadMaiaAvatar())
-  const [visited,   setVisited]   = useState(saved?.visited || [])
+  const [explored,  setExplored]  = useState(loadExplored)
   const [editing,   setEditing]   = useState(false)
+  const contentRef = useVillaExplored('/concierge')
 
   useEffect(() => {
-    if (phase === 'main') saveConcierge({ visited, avatarConfig: avatarCfg })
-  }, [avatarCfg, phase, visited])
+    if (phase === 'main') saveConcierge({ avatarConfig: avatarCfg })
+  }, [avatarCfg, phase])
+
+  useEffect(() => {
+    const off = onExploredChange(setExplored)
+    restoreExplored().then(setExplored)
+    return off
+  }, [])
 
   function finishWizard() {
     saveMaiaAvatar(avatarCfg)
     setPhase('main')
     setEditing(false)
-    saveConcierge({ visited, avatarConfig: avatarCfg })
+    saveConcierge({ avatarConfig: avatarCfg })
     syncProfile({ avatarConfig: avatarCfg })
     syncEntry({
       category: 'concierge',
       source: 'concierge-villa',
       entryKey: 'profile',
-      payload: { visited, avatarConfig: avatarCfg },
+      payload: { avatarConfig: avatarCfg },
     })
   }
 
-  function markVisited(path) {
-    if (!visited.includes(path)) {
-      const next = [...visited, path]
-      setVisited(next)
-      saveConcierge({ visited: next, avatarConfig: avatarCfg })
-      syncEntry({
-        category: 'concierge',
-        source: 'island-map',
-        entryKey: 'visited',
-        payload: { visited: next, path },
-      })
-    }
-    navigate(path)
-  }
-
-  const allVisited  = VILLAS.every(v => visited.includes(v.path))
-  const moodVisited = visited.includes('/mood-diary')
+  const allVisited  = PROGRESS_VILLAS.every(p => explored.includes(p))
+  const moodVisited = explored.includes('/mood-diary')
   const vs = { '--villa-color': '#f59e0b', '--villa-color-light': '#fcd34d' }
 
   if (phase === 'welcome' || editing) {
@@ -140,7 +134,7 @@ export default function ConciergeVilla() {
         </button>
       </div>
 
-      <div className="villa-content">
+      <div className="villa-content" ref={contentRef}>
 
         <div className="villa-card" style={{ animationDelay: '0s' }}>
           <div className="card-icon">🗺</div>
@@ -161,9 +155,9 @@ export default function ConciergeVilla() {
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {VILLAS.map(v => {
-              const done = visited.includes(v.path)
+              const done = explored.includes(v.path)
               return (
-                <button key={v.path} onClick={() => markVisited(v.path)} style={{
+                <button key={v.path} onClick={() => navigate(v.path)} style={{
                   display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderRadius: 14,
                   border: done ? '1.5px solid rgba(74,222,128,0.45)' : v.recommended ? '1.5px solid rgba(245,158,11,0.5)' : '1.5px solid var(--ri-card-border)',
                   background: done ? 'rgba(74,222,128,0.07)' : v.recommended ? 'rgba(245,158,11,0.08)' : 'var(--ri-card-bg)',
@@ -183,7 +177,7 @@ export default function ConciergeVilla() {
             })}
           </div>
           {allVisited && (
-            <button className="card-btn" style={{ marginTop: 16, width: '100%', padding: '13px', fontSize: '0.95rem' }} onClick={() => markVisited('/mood-diary')}>
+            <button className="card-btn" style={{ marginTop: 16, width: '100%', padding: '13px', fontSize: '0.95rem' }} onClick={() => navigate('/mood-diary')}>
               Return to Mood Diary to compare
             </button>
           )}
@@ -201,9 +195,9 @@ export default function ConciergeVilla() {
           <h3 className="card-title">Your progress</h3>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 8 }}>
             <div style={{ flex: 1, height: 10, borderRadius: 999, background: 'var(--ri-card-border)', overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${(visited.length / VILLAS.length) * 100}%`, background: 'linear-gradient(90deg, #f59e0b, #fcd34d)', borderRadius: 999, transition: 'width 0.5s ease' }} />
+              <div style={{ height: '100%', width: `${(explored.length / PROGRESS_VILLAS.length) * 100}%`, background: 'linear-gradient(90deg, #f59e0b, #fcd34d)', borderRadius: 999, transition: 'width 0.5s ease' }} />
             </div>
-            <span style={{ color: 'var(--ri-text-secondary)', fontSize: '0.85rem', flexShrink: 0 }}>{visited.length} / {VILLAS.length}</span>
+            <span style={{ color: 'var(--ri-text-secondary)', fontSize: '0.85rem', flexShrink: 0 }}>{explored.length} / {PROGRESS_VILLAS.length}</span>
           </div>
           {!moodVisited && <p style={{ color: 'var(--ri-text-muted)', fontSize: '0.82rem', marginTop: 10 }}>Visit Mood Diary Centre first to set your baseline mood.</p>}
           {moodVisited && !allVisited && <p style={{ color: 'var(--ri-text-muted)', fontSize: '0.82rem', marginTop: 10 }}>Great start. Explore the remaining villas, then return to compare.</p>}

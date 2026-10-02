@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import MaiaGuide from '../components/MaiaGuide'
 import { fetchEntries, syncEntry } from '../lib/villaSync'
 import { SCALES } from '../lib/assessments'
+import { useVillaExplored } from '../lib/villaProgress'
 
 const ASSESS_CARDS = SCALES.map(s => ({
   id: s.id,
@@ -113,6 +114,7 @@ function normalizeAssessmentPayload(payload) {
 export default function MoodDiaryCentre() {
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
+  const exploredRef = useVillaExplored('/mood-diary')
 
   // Assessment scores saved by EmotionScales page
   const [savedScores, setSavedScores] = useState(() => readLS('ri_scores', {}))
@@ -368,7 +370,7 @@ export default function MoodDiaryCentre() {
         <p className="villa-subtitle">Every emotion tells a story. Here, you write yours.</p>
       </div>
 
-      <div className="mdc-page">
+      <div className="mdc-page" ref={exploredRef}>
 
         {/* ── Assessment Cards ── */}
         <p className="mdc-label">My Emotion Assessments</p>
