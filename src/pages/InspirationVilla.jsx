@@ -29,13 +29,12 @@ export default function InspirationVilla() {
           text: 'On the quiet disorientation of adjusting to a new culture or place, and what it takes to start feeling at home again.',
           videoUrl: 'https://youtu.be/bGh1-hh-kQU',
         },
-        // Hidden until the YouTube video is ready — uncomment and add the real link.
-        // {
-        //   icon: '💼',
-        //   title: "Managing Internship Anxiety: You Don't Have to Prove Yourself",
-        //   text: 'A reminder that you were chosen to learn, not to already know everything — for anyone feeling the pressure of a new internship.',
-        //   videoUrl: 'https://youtu.be/REPLACE_WITH_VIDEO_3_ID',
-        // },
+        {
+          icon: '💼',
+          title: "Managing Internship Anxiety: You Don't Have to Prove Yourself",
+          text: 'A reminder that you were chosen to learn, not to already know everything — for anyone feeling the pressure of a new internship.',
+          videoUrl: 'https://www.youtube.com/watch?v=MdKVIWAs2e4',
+        },
         {
           icon: '🧭',
           title: 'Navigating Career Comparison: You Are Not Behind',
@@ -58,4 +57,3 @@ export default function InspirationVilla() {
     }} />
   )
 }
-
